@@ -6,7 +6,7 @@ CogGroup-MAC based on NS-3.33
 
 
 
-### Prerequisites
+### Preparation for installation of ns-3.33
 
 The following list of packages should be accurate through the Ubuntu  21.04 release; other releases or other Debian-based systems may slightly vary.  Ubuntu 16.04 LTS release is probably the oldest release that is  known to work with recent ns-3 releases.
 
@@ -186,7 +186,7 @@ $ tar xjf ns-allinone-3.33.tar.bz2
 Following these steps, if you change into the directory `ns-allinone-3.33`, you should see a number of files and directories
 
 ```
-$ cd ns-allinone-3.32
+$ cd ns-allinone-3.33
 $ ls
 bake      constants.py   ns-3.33                            README
 build.py  netanim-3.108  pybindgen-0.21.0                   util.py
@@ -223,9 +223,11 @@ Although the above steps made you build the *ns-3* part of the system twice, now
 
 ### Extending CogGroup-MAC Module
 
-Copy and paste folder `~/CogGroup-MAC/src/` and folder `~/CogGroup-MAC/scratch/` in `~/CogGroup-MAC/` into `~/workspace/ns-allinone-3.32/ns-3.33` directory, This step will overwrite some files.
+Copy and paste folder `~/CogGroup-MAC/src/`  in `~/CogGroup-MAC/` into `~/workspace/ns-allinone-3.33/ns-3.33` directory, This step will overwrite some files.
 
-
+```
+$ cp -r ./CogGroup-MAC/src/* ~/workspace/ns-allinone-3.33/ns-3.33/src/
+```
 
 ### Rebuilding with Waf
 
@@ -239,11 +241,9 @@ $ ./waf
 
 ### Running an example of CogGroup-MAC
 
-Type the following:
+#### A  demonstration `ns50-1`
 
-```
-$ ./waf --run scratch/n50-1
-```
+The following is an example of a CogGroup-MAC.
 
 **n50-1.cc**
 
@@ -580,10 +580,33 @@ int main (int argc, char *argv[])
 }
 ```
 
-
-
 **Note:**
 
 **helper.SetSatandard (MMWAVE_COGNITIVE_RADIO_XXX);**This parameter **MMWAVE_COGNITIVE_RADIO_XXX** specifies the multi-channel specification definition used by coggroup Mac, where the center frequency and bandwidth of all candidate channels are defined. 
 
 **MMWAVE_COGNITIVE_RADIO_60GHz_40MHz:** shows that the current coggroup MAC candidate channels are four channels with 40MHz bandwidth in the 60GHz range.
+
+#### Running the `ns50-1`
+
+First, We put the examples `n50-1.cc` in the `~/workspace/ns-allinone-3.33/ns-3.33/scratch/` folder.
+
+```
+$ cp n50-1.cc ~/workspace/ns-allinone-3.33/ns-3.33/scratch/n50-1.cc
+$ cp scenario-n50.ns_movements ~/workspace/ns-allinone-3.33/ns-3.33/scratch/n50-1.cc
+```
+
+Then we recompile ns-2.33 with the following command
+
+```
+$ cd ~/workspace/ns-allinone-3.33/ns-3.33/
+$ ./waf 
+```
+
+Run the `n50-1`
+
+```
+$ ./waf --run scratch/n50-1
+```
+
+
+
