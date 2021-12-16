@@ -35,11 +35,11 @@ namespace ns3 {
                                                      &MmWavePhy::SetFrequency),
                                MakeUintegerChecker<uint16_t> ())
                 .AddAttribute ("ChannelWidth",
-                               "Whether 80MHz, 160MHz, 320MHz, 640MHz.",
-                               UintegerValue (80),
+                               "Whether 320MHz, 640MHz, 1280MHz.",
+                               UintegerValue (1280),
                                MakeUintegerAccessor (&MmWavePhy::GetChannelWidth,
                                                      &MmWavePhy::SetChannelWidth),
-                               MakeUintegerChecker<uint16_t> (80, 640))
+                               MakeUintegerChecker<uint16_t> (320, 1280))
                 .AddAttribute ("ChannelNumber",
                                "If set to non-zero defined value, will control Frequency and ChannelWidth assignment",
                                UintegerValue (0),
@@ -113,19 +113,19 @@ namespace ns3 {
                                MakeTimeChecker ())
                 .AddAttribute ("Antennas",
                                "The number of antennas on the device.",
-                               UintegerValue (8),
+                               UintegerValue (1),
                                MakeUintegerAccessor (&MmWavePhy::GetNumberOfAntennas,
                                                      &MmWavePhy::SetNumberOfAntennas),
                                MakeUintegerChecker<uint8_t> (1, 8))
                 .AddAttribute ("MaxSupportedTxSpatialStreams",
                                "The maximum number of supported TX spatial streams.",
-                               UintegerValue (8),
+                               UintegerValue (1),
                                MakeUintegerAccessor (&MmWavePhy::GetMaxSupportedTxSpatialStreams,
                                                      &MmWavePhy::SetMaxSupportedTxSpatialStreams),
                                MakeUintegerChecker<uint8_t> (1, 8))
                 .AddAttribute ("MaxSupportedRxSpatialStreams",
                                "The maximum number of supported RX spatial streams.",
-                               UintegerValue (8),
+                               UintegerValue (1),
                                MakeUintegerAccessor (&MmWavePhy::GetMaxSupportedRxSpatialStreams,
                                                      &MmWavePhy::SetMaxSupportedRxSpatialStreams),
                                MakeUintegerChecker<uint8_t> (1, 8))
@@ -413,7 +413,7 @@ namespace ns3 {
     MmWavePhy::GetPreambleDetectionDuration ()
     {
         // short training field (STF)
-        return NanoSeconds (1000);
+        return NanoSeconds (0.57 * 5120);
     }
 
     Time
@@ -423,7 +423,7 @@ namespace ns3 {
         {
             case MMWAVE_PREAMBLE_DEFAULT:
                 // The preamble contains a short training field (STF) and channel estimation field (CEF).
-                return NanoSeconds (1000);
+                return NanoSeconds (0.57 * (5120 + 1152));
             case MMWAVE_PREAMBLE_UNSPECIFIED:
                 return NanoSeconds (0);
             default:
@@ -438,7 +438,7 @@ namespace ns3 {
         switch (txVector.GetPreambleType ())
         {
             case MMWAVE_PREAMBLE_DEFAULT:
-                return NanoSeconds (400);
+                return MicroSeconds (1);
             case MMWAVE_PREAMBLE_UNSPECIFIED:
                 return NanoSeconds (0);
             default:
@@ -463,9 +463,7 @@ namespace ns3 {
         MmWaveMode payloadMode = txVector.GetMode ();
         double stbc = 1;
         double Nes = 1;
-        uint16_t gi = txVector.GetGuardInterval ();
-        NS_ASSERT (gi == 800 || gi == 1600 || gi == 3200);
-        Time symbolDuration = NanoSeconds (12800 + gi);
+        Time symbolDuration = NanoSeconds (12800 + txVector.GetGuardInterval ());
         double numDataBitsPerSymbol = payloadMode.GetDataRate (txVector) * symbolDuration.GetNanoSeconds () / 1e9;
         double numSymbols = lrint (stbc * ceil ((16 + size * 8.0 + 6.0 * Nes) / (stbc * numDataBitsPerSymbol)));
 
@@ -595,6 +593,7 @@ namespace ns3 {
     MmWavePhy::SetChannelWidth (uint16_t channelWidth)
     {
         NS_LOG_FUNCTION (this << channelWidth);
+        NS_ASSERT_MSG (channelWidth == 160 || channelWidth == 320 || channelWidth == 640 || channelWidth == 1280, "wrong channel width value");
         bool changed = (m_channelWidth != channelWidth);
         m_channelWidth = channelWidth;
         AddSupportedChannelWidth (channelWidth);
@@ -635,8 +634,8 @@ namespace ns3 {
             ConfigureChannelForStandard ();
         }
 
-        SetSifs (NanoSeconds (3000));
-        SetSlot (NanoSeconds (6000));
+        SetSifs (NanoSeconds (2000));
+        SetSlot (NanoSeconds (4500));
 
         PushMcs (MmWavePhy::GetMmWaveMcs0 ());
         PushMcs (MmWavePhy::GetMmWaveMcs1 ());
@@ -838,6 +837,7 @@ namespace ns3 {
     MmWavePhy::SetNumberOfAntennas (uint8_t antennas)
     {
         NS_LOG_FUNCTION (this);
+        NS_ASSERT_MSG (antennas > 0 && antennas <= 4, "unsupported number of antennas");
         m_numberOfAntennas = antennas;
         m_interference.SetNumberOfReceiveAntennas (antennas);
     }
@@ -899,7 +899,7 @@ namespace ns3 {
     MmWavePhy::SwitchMaybeToCcaBusy ()
     {
         NS_LOG_FUNCTION (this);
-        uint16_t primaryChannelWidth = MMWAVE_MIN_BANDWIDTH;
+        uint16_t primaryChannelWidth = GetChannelWidth ();
         Time delayUntilCcaEnd = m_interference.GetEnergyDuration (m_ccaEdThresholdW, GetBand (primaryChannelWidth));
         if (!delayUntilCcaEnd.IsZero ())
         {
@@ -989,7 +989,7 @@ namespace ns3 {
             case MmWavePhyState::MMWAVE_SLEEP:
             {
                 NS_LOG_DEBUG ("resuming from sleep mode");
-                uint16_t primaryChannelWidth = MMWAVE_MIN_BANDWIDTH;
+                uint16_t primaryChannelWidth = GetChannelWidth () >= 40 ? 20 : GetChannelWidth ();
                 Time delayUntilCcaEnd = m_interference.GetEnergyDuration (m_ccaEdThresholdW, GetBand (primaryChannelWidth));
                 m_state->SwitchFromSleep (delayUntilCcaEnd);
                 break;
@@ -1021,7 +1021,7 @@ namespace ns3 {
             case MmWavePhyState::MMWAVE_OFF:
             {
                 NS_LOG_DEBUG ("resuming from off mode");
-                uint16_t primaryChannelWidth = MMWAVE_MIN_BANDWIDTH;
+                uint16_t primaryChannelWidth = GetChannelWidth () >= 40 ? 20 : GetChannelWidth ();
                 Time delayUntilCcaEnd = m_interference.GetEnergyDuration (m_ccaEdThresholdW, GetBand (primaryChannelWidth));
                 m_state->SwitchFromOff (delayUntilCcaEnd);
                 break;
@@ -1151,21 +1151,9 @@ namespace ns3 {
         {
             case MmWavePhyState::MMWAVE_RX:
                 NS_LOG_DEBUG ("drop packet because of channel switching while reception");
-                if (m_endPhyRxEvent.IsRunning ())
-                {
-                    m_endPhyRxEvent.Cancel ();
-                }
-                if (m_endRxEvent.IsRunning ())
-                {
-                    m_endRxEvent.Cancel ();
-                }
-                if (m_endPreambleDetectionEvent.IsRunning ())
-                {
-                    m_endPreambleDetectionEvent.Cancel ();
-                }
-                NS_ASSERT (m_endPhyRxEvent.IsExpired ());
-                NS_ASSERT (m_endRxEvent.IsExpired ());
-                NS_ASSERT (m_endPreambleDetectionEvent.IsExpired ());
+                m_endPhyRxEvent.Cancel ();
+                m_endRxEvent.Cancel ();
+                m_endPreambleDetectionEvent.Cancel ();
                 goto switchChannel;
                 break;
             case MmWavePhyState::MMWAVE_TX:
@@ -1174,22 +1162,11 @@ namespace ns3 {
                 break;
             case MmWavePhyState::MMWAVE_CCA_BUSY:
             case MmWavePhyState::MMWAVE_IDLE:
-                NS_LOG_DEBUG ("cancel the timer because of channel switching while timer is running");
-                if (m_endPhyRxEvent.IsRunning ())
-                {
-                    m_endPhyRxEvent.Cancel ();
-                }
-                if (m_endRxEvent.IsRunning ())
-                {
-                    m_endRxEvent.Cancel ();
-                }
                 if (m_endPreambleDetectionEvent.IsRunning ())
                 {
                     m_endPreambleDetectionEvent.Cancel ();
+                    m_endRxEvent.Cancel ();
                 }
-                NS_ASSERT (m_endPhyRxEvent.IsExpired ());
-                NS_ASSERT (m_endRxEvent.IsExpired ());
-                NS_ASSERT (m_endPreambleDetectionEvent.IsExpired ());
                 goto switchChannel;
                 break;
             case MmWavePhyState::MMWAVE_SLEEP:
@@ -1236,7 +1213,6 @@ namespace ns3 {
                 break;
             case MmWavePhyState::MMWAVE_TX:
                 NS_LOG_DEBUG ("channel/frequency switching postponed until end of current transmission");
-                printf ("channel/frequency switching postponed until end of current transmission\n");
                 Simulator::Schedule (GetDelayUntilIdle (), &MmWavePhy::SetFrequency, this, frequency);
                 break;
             case MmWavePhyState::MMWAVE_CCA_BUSY:
@@ -1671,10 +1647,6 @@ namespace ns3 {
         NS_LOG_FUNCTION (this << psdus << txVector);
         NS_ASSERT (!m_state->IsStateTx ());
         NS_ASSERT (!m_state->IsStateSwitching ());
-        if (!m_endTxEvent.IsExpired ())
-        {
-            m_endTxEvent.Cancel ();
-        }
         NS_ASSERT (m_endTxEvent.IsExpired ());
 
         if (txVector.GetNssMax () > GetMaxSupportedTxSpatialStreams ())
@@ -1727,9 +1699,8 @@ namespace ns3 {
             NotifyMonitorSniffTx (psdu.second, GetFrequency (), txVector);
         }
         m_state->SwitchToTx (txDuration, psdus, GetPowerDbm (txVector.GetTxPowerLevel ()), txVector, GetChannelNumber(), GetFrequency(), GetChannelWidth());
-        m_endTxEvent = Simulator::Schedule (txDuration, &MmWavePhy::NotifyTxEnd, this, psdus);
-        
         Ptr<MmWavePpdu> ppdu = Create<MmWavePpdu> (psdus, txVector, txDuration, GetPhyBand ());
+        m_endTxEvent = Simulator::Schedule (txDuration, &MmWavePhy::NotifyTxEnd, this, psdus);
         StartTx (ppdu);
         m_channelAccessRequested = false;
         m_powerRestricted = false;
@@ -1887,7 +1858,7 @@ namespace ns3 {
     MmWavePhy::StartRx (Ptr<MmWaveEvent> event)
     {
         NS_LOG_FUNCTION (this << *event);
-        uint16_t primaryChannelWidth = MMWAVE_MIN_BANDWIDTH;
+        uint16_t primaryChannelWidth = GetChannelWidth ();
         auto primaryBand = GetBand (primaryChannelWidth);
         double rxPowerW = event->GetRxPowerW (primaryBand);
         NS_LOG_FUNCTION (this << *event << rxPowerW);
@@ -1923,30 +1894,6 @@ namespace ns3 {
     MmWavePhy::StartReceiveHeader (Ptr<MmWaveEvent> event)
     {
         NS_LOG_FUNCTION (this << *event);
-        if (IsStateRx ())
-        {
-            Time rxDuration = event->GetDuration ();
-            Time endRx = Simulator::Now () + rxDuration;
-            NS_ASSERT (m_currentEvent != 0);
-            if (m_frameCaptureModel != 0
-                && m_frameCaptureModel->IsInCaptureWindow (m_timeLastPreambleDetected)
-                && m_frameCaptureModel->CaptureNewFrame (m_currentEvent, event))
-            {
-                NS_LOG_DEBUG ("Switch to new packet");
-                AbortCurrentReception (MMWAVE_FRAME_CAPTURE_PACKET_SWITCH);
-                StartRx (event);
-            }
-            else
-            {
-                NS_LOG_DEBUG ("Drop packet because already in Rx");
-                NotifyRxDrop (GetAddressedPsduInPpdu (event->GetPpdu ()), MMWAVE_RXING);
-                if (endRx > (Simulator::Now () + m_state->GetDelayUntilIdle ()))
-                {
-                    MaybeCcaBusyDuration ();
-                }
-            }
-            return;
-        }
         NS_ASSERT (!IsStateRx ());
         NS_ASSERT (m_endPhyRxEvent.IsExpired ());
         NS_ASSERT (m_currentEvent != 0);
@@ -2022,7 +1969,7 @@ namespace ns3 {
         bool canReceivePayload = false;
         Ptr<const MmWavePpdu> ppdu = event->GetPpdu ();
         MmWaveModulationClass modulation = ppdu->GetModulation ();
-        uint16_t primaryChannelWidth = MMWAVE_MIN_BANDWIDTH;
+        uint16_t primaryChannelWidth = event->GetTxVector ().GetChannelWidth ();
         auto primaryBand = GetBand (primaryChannelWidth);
         if (modulation == MMWAVE_MOD_CLASS_OFDM)
         {
@@ -2137,7 +2084,7 @@ namespace ns3 {
     MmWavePhy::MaybeCcaBusyDuration ()
     {
         NS_LOG_FUNCTION (this);
-        uint16_t primaryChannelWidth = MMWAVE_MIN_BANDWIDTH;
+        uint16_t primaryChannelWidth = GetChannelWidth ();
         Time delayUntilCcaEnd = m_interference.GetEnergyDuration (m_ccaEdThresholdW, GetBand (primaryChannelWidth));
         if (!delayUntilCcaEnd.IsZero ())
         {

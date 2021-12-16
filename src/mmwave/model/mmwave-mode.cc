@@ -33,6 +33,8 @@ namespace ns3 {
     uint64_t
     MmWaveMode::GetPhyRate (uint16_t channelWidth, uint16_t guardInterval, uint8_t nss) const
     {
+        //TODO: nss > 4 not supported yet
+        NS_ASSERT (nss <= 4);
         uint64_t dataRate, phyRate;
         dataRate = GetDataRate (channelWidth, guardInterval, nss);
         switch (GetCodeRate ())
@@ -80,6 +82,8 @@ namespace ns3 {
     uint64_t
     MmWaveMode::GetDataRate (uint16_t channelWidth, uint16_t guardInterval, uint8_t nss) const
     {
+        //TODO: nss > 4 not supported yet
+        NS_ASSERT (nss <= 4);
         MmWaveModeFactory::MmWaveModeItem *item = MmWaveModeFactory::GetFactory ()->Get (m_uid);
         uint64_t dataRate = 0;
         uint16_t usableSubCarriers = 0;
@@ -174,9 +178,8 @@ namespace ns3 {
                 case 1:
                 case 2:
                 case 3:
-                    return 1024;
                 default:
-                    return 0;
+                    return 254;
             }
         }
         else

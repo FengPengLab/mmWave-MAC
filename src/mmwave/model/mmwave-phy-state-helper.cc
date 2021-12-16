@@ -368,7 +368,6 @@ namespace ns3 {
         m_previousStateChangeTime = now;
         m_endTx = now + txDuration;
         m_startTx = now;
-        NS_LOG_DEBUG ("MmWavePhyStateHelper::SwitchToTx m_startTx:" << m_startTx << "m_endTx:" << m_endTx);
         NotifyTxStart (txDuration, txPowerDbm);
     }
 
@@ -427,7 +426,8 @@ namespace ns3 {
                 LogPreviousIdleAndCcaBusyStates ();
                 break;
             default:
-                NS_FATAL_ERROR ("Invalid MmWavePhy state.");
+                return;
+//                NS_FATAL_ERROR ("Invalid MmWavePhy state.");
                 break;
         }
 

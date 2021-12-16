@@ -18,11 +18,11 @@ namespace ns3 {
                 .SetGroupName ("MmWave")
                 .AddConstructor<MmWaveConstantRateManager> ()
                 .AddAttribute ("DataMode", "The transmission mode to use for every data packet transmission",
-                               StringValue ("MmWaveMcs3"),
+                               StringValue ("MmWaveMcs0"),
                                MakeMmWaveModeAccessor (&MmWaveConstantRateManager::m_dataMode),
                                MakeMmWaveModeChecker ())
                 .AddAttribute ("ControlMode", "The transmission mode to use for every RTS packet transmission.",
-                               StringValue ("MmWaveMcs3"),
+                               StringValue ("MmWaveMcs0"),
                                MakeMmWaveModeAccessor (&MmWaveConstantRateManager::m_ctlMode),
                                MakeMmWaveModeChecker ())
         ;
@@ -110,8 +110,8 @@ namespace ns3 {
         uint8_t powerLevel = GetDefaultTxPowerLevel ();
         MmWavePreamble preamble = GetPreamble (st);
         uint16_t guardInterval = GetGuardInterval (st);
-        uint8_t nTx = GetNumberOfAntennas ();
-        uint8_t nss = ((GetMaxNumberOfTransmitStreams () < GetNumberOfSupportedStreams (st)) ? GetMaxNumberOfTransmitStreams () : GetNumberOfSupportedStreams (st));
+        uint8_t nTx = 1;
+        uint8_t nss = 1;
         uint8_t ness = 0;
         uint16_t channelWidth = GetChannelWidth (st);
         return MmWaveTxVector (m_ctlMode, powerLevel, preamble, guardInterval, nTx, nss, ness, channelWidth);

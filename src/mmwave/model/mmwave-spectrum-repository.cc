@@ -597,16 +597,16 @@ namespace ns3 {
 
             m_statisticalInfo[i.first] = statistic;
 
-        //     NS_LOG_DEBUG ("-------------------------------------");
-        //     NS_LOG_DEBUG ("channel:" << i.first
-        //                              << ", m_isValid:"<< statistic->m_isValid
-        //                              << ", m_isAnyPUs:" << statistic->m_isAnyPUs
-        //                              << ", m_isAnySUs:" << statistic->m_isAnySUs
-        //                              << ", m_avgPower:" << statistic->m_avgPower
-        //                              << ", m_utilizationRateForPUs:" << statistic->m_utilizationRateForPUs
-        //                              << ", m_utilizationRateForSUs:" << statistic->m_utilizationRateForSUs
-        //                              << ", m_vacancyRate:" << statistic->m_vacancyRate);
-        //     NS_LOG_DEBUG ("-------------------------------------");
+            NS_LOG_DEBUG ("-------------------------------------");
+            NS_LOG_DEBUG ("channel:" << i.first
+                                     << ", m_isValid:"<< statistic->m_isValid
+                                     << ", m_isAnyPUs:" << statistic->m_isAnyPUs
+                                     << ", m_isAnySUs:" << statistic->m_isAnySUs
+                                     << ", m_avgPower:" << statistic->m_avgPower
+                                     << ", m_utilizationRateForPUs:" << statistic->m_utilizationRateForPUs
+                                     << ", m_utilizationRateForSUs:" << statistic->m_utilizationRateForSUs
+                                     << ", m_vacancyRate:" << statistic->m_vacancyRate);
+            NS_LOG_DEBUG ("-------------------------------------");
         }
     }
 

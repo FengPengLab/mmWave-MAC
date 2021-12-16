@@ -12,8 +12,6 @@
 #include "mmwave-ppdu.h"
 #include "mmwave-psdu.h"
 
-#undef NS_LOG_APPEND_CONTEXT
-#define NS_LOG_APPEND_CONTEXT std::clog << "[" << m_typeOfGroup << "] "
 namespace ns3 {
 
     NS_LOG_COMPONENT_DEFINE ("MmWaveSpectrumPhy");
@@ -106,7 +104,7 @@ namespace ns3 {
             else
             {
                 uint16_t channelWidth = GetChannelWidth ();
-                NS_LOG_DEBUG ("Creating spectrum model from frequency/width pair of (" << GetFrequency () << ", " << channelWidth << ")");
+//                NS_LOG_DEBUG ("Creating spectrum model from frequency/width pair of (" << GetFrequency () << ", " << channelWidth << ")");
                 m_rxSpectrumModel = MmWaveSpectrumValueHelper::GetSpectrumModel (GetFrequency (), channelWidth, GetBandBandwidth (), GetGuardBandwidth (channelWidth));
                 UpdateInterferenceHelperBands ();
             }
@@ -120,14 +118,14 @@ namespace ns3 {
         NS_LOG_FUNCTION (this);
         uint16_t channelWidth = GetChannelWidth ();
         m_interference.RemoveBands ();
-        if (channelWidth < MMWAVE_MIN_BANDWIDTH)
+        if (channelWidth < 20)
         {
             MmWaveSpectrumBand band = GetBand (channelWidth);
             m_interference.AddBand (band);
         }
         else
         {
-            for (uint16_t bw = MMWAVE_MAX_BANDWIDTH; bw >= MMWAVE_MIN_BANDWIDTH; bw = bw / 2)
+            for (uint16_t bw = 1280; bw >= 20; bw = bw / 2)
             {
                 for (uint8_t i = 0; i < (channelWidth / bw); ++i)
                 {
@@ -143,9 +141,7 @@ namespace ns3 {
         NS_LOG_FUNCTION (this);
         NS_ASSERT_MSG (IsInitialized (), "Executing method before run-time");
         uint16_t channelWidth = GetChannelWidth ();
-        NS_LOG_DEBUG ("Run-time change of spectrum model from frequency/width pair of (" << GetFrequency () << ", " << channelWidth << ")");
-        // Replace existing spectrum model with new one, and must call AddRx ()
-        // on the SpectrumChannel to provide this new spectrum model to it
+//        NS_LOG_DEBUG ("Run-time change of spectrum model from frequency/width pair of (" << GetFrequency () << ", " << channelWidth << ")");
         m_rxSpectrumModel = MmWaveSpectrumValueHelper::GetSpectrumModel (GetFrequency (), channelWidth, GetBandBandwidth (), GetGuardBandwidth (channelWidth));
         m_channel->AddRx (m_mmWaveSpectrumPhyInterface);
         UpdateInterferenceHelperBands ();
@@ -225,7 +221,6 @@ namespace ns3 {
         NS_LOG_FUNCTION (this);
         Ptr<MmWaveSpectrumSignalParameters> mmWaveRxParams = DynamicCast<MmWaveSpectrumSignalParameters> (rxParams);
         bool isMatch = mmWaveRxParams->channel->IsMatch (GetPhyStandard(), GetPhyBand(), GetChannelNumber(),GetFrequency(), GetChannelWidth());
-     
         if (!isMatch)
         {
             return;
@@ -241,7 +236,7 @@ namespace ns3 {
         double totalRxPowerW = 0;
         RxPowerWattPerChannelBand rxPowerW;
 
-        for (uint16_t bw = MMWAVE_MAX_BANDWIDTH; bw > MMWAVE_MIN_BANDWIDTH; bw = bw / 2)
+        for (uint16_t bw = 1280; bw > 20; bw = bw / 2)
         {
             for (uint8_t i = 0; i < (channelWidth / bw); i++)
             {
@@ -249,40 +244,46 @@ namespace ns3 {
                 MmWaveSpectrumBand filteredBand = GetBand (bw, i);
                 Ptr<SpectrumValue> filter = MmWaveSpectrumValueHelper::CreateRfFilter (GetFrequency (), channelWidth, GetBandBandwidth (), GetGuardBandwidth (channelWidth), filteredBand);
                 SpectrumValue filteredSignal = (*filter) * (*receivedSignalPsd);
+//                NS_LOG_DEBUG ("Signal power received (watts) before antenna gain for" << bw << " MHz channel band " << +i << ": " << Integral (filteredSignal));
                 double rxPowerPerBandW = Integral (filteredSignal) * DbToRatio (GetRxGain ());
                 rxPowerW.insert ({filteredBand, rxPowerPerBandW});
+//                NS_LOG_DEBUG ("Signal power received after antenna gain for" << bw << " MHz channel band " << +i << ": " << rxPowerPerBandW << " W (" << WToDbm (rxPowerPerBandW) << " dBm)");
             }
         }
         
-        for (uint8_t i = 0; i < (channelWidth / MMWAVE_MIN_BANDWIDTH); i++)
+        for (uint8_t i = 0; i < (channelWidth / 20); i++)
         {
-            MmWaveSpectrumBand filteredBand = GetBand (MMWAVE_MIN_BANDWIDTH, i);
+            MmWaveSpectrumBand filteredBand = GetBand (20, i);
             Ptr<SpectrumValue> filter = MmWaveSpectrumValueHelper::CreateRfFilter (GetFrequency (), channelWidth, GetBandBandwidth (), GetGuardBandwidth (channelWidth), filteredBand);
             SpectrumValue filteredSignal = (*filter) * (*receivedSignalPsd);
+//            NS_LOG_DEBUG ("Signal power received (watts) before antenna gain for 20 MHz channel band " << +i << ": " << Integral (filteredSignal));
             double rxPowerPerBandW = Integral (filteredSignal) * DbToRatio (GetRxGain ());
             totalRxPowerW += rxPowerPerBandW;
             rxPowerW.insert ({filteredBand, rxPowerPerBandW});
+//            NS_LOG_DEBUG ("Signal power received after antenna gain for 20 MHz channel band " << +i << ": " << rxPowerPerBandW << " W (" << WToDbm (rxPowerPerBandW) << " dBm)");
         }
-        
+
+//        NS_LOG_DEBUG ("Total signal power received after antenna gain: " << totalRxPowerW << " W (" << WToDbm (totalRxPowerW) << " dBm)");
+//        Ptr<MmWaveSpectrumSignalParameters> mmWaveRxParams = DynamicCast<MmWaveSpectrumSignalParameters> (rxParams);
         // Log the signal arrival to the trace source
         m_signalCb (mmWaveRxParams ? true : false, senderNodeId, WToDbm (totalRxPowerW), rxDuration);
         // Do no further processing if signal is too weak
         // Current implementation assumes constant RX power over the PPDU duration
         if (WToDbm (totalRxPowerW) < GetRxSensitivity ())
         {
-            NS_LOG_INFO ("Received signal too weak to process: " << WToDbm (totalRxPowerW) << " dBm");
+//            NS_LOG_INFO ("Received signal too weak to process: " << WToDbm (totalRxPowerW) << " dBm");
             return;
         }
         if (mmWaveRxParams == 0)
         {
-            NS_LOG_INFO ("Received non mmWave signal");
+//            NS_LOG_INFO ("Received non mmWave signal");
             m_interference.AddForeignSignal (rxDuration, rxPowerW);
             SwitchMaybeToCcaBusy ();
             return;
         }
         if (mmWaveRxParams && m_disableReception)
         {
-            NS_LOG_INFO ("Received signal but blocked from syncing");
+//            NS_LOG_INFO ("Received signal but blocked from syncing");
             m_interference.AddForeignSignal (rxDuration, rxPowerW);
             SwitchMaybeToCcaBusy ();
             return;
@@ -310,10 +311,8 @@ namespace ns3 {
         switch (modulationClass)
         {
             case MMWAVE_MOD_CLASS_OFDM:
-                v = MmWaveSpectrumValueHelper::CreateMmWaveOfdmTxPowerSpectralDensity (centerFrequency, channelWidth, txPowerW, 
-                                                                                       GetGuardBandwidth (channelWidth),
-                                                                                       m_txMaskInnerBandMinimumRejection, 
-                                                                                       m_txMaskOuterBandMinimumRejection,
+                v = MmWaveSpectrumValueHelper::CreateMmWaveOfdmTxPowerSpectralDensity (centerFrequency, channelWidth, txPowerW, GetGuardBandwidth (channelWidth),
+                                                                                       m_txMaskInnerBandMinimumRejection, m_txMaskOuterBandMinimumRejection,
                                                                                        m_txMaskOuterBandMaximumRejection);
                 break;
             default:
@@ -344,7 +343,7 @@ namespace ns3 {
         NS_LOG_FUNCTION (this << ppdu);
         MmWaveTxVector txVector = ppdu->GetTxVector ();
         double txPowerDbm = GetTxPowerForTransmission (txVector) + GetTxGain ();
-        NS_LOG_DEBUG ("Start transmission: signal power before antenna gain=" << txPowerDbm << "dBm");
+//        NS_LOG_DEBUG ("Start transmission: signal power before antenna gain=" << txPowerDbm << "dBm");
         double txPowerWatts = DbmToW (txPowerDbm);
         Ptr<SpectrumValue> txPowerSpectrum = GetTxPowerSpectralDensity (GetCenterFrequencyForChannelWidth (txVector), txVector.GetChannelWidth (), txPowerWatts, ppdu->GetModulation ());
         Ptr<MmWaveSpectrumSignalParameters> txParams = Create<MmWaveSpectrumSignalParameters> ();
@@ -354,8 +353,8 @@ namespace ns3 {
         txParams->txPhy = m_mmWaveSpectrumPhyInterface->GetObject<SpectrumPhy> ();
         txParams->txAntenna = m_antenna;
         txParams->ppdu = ppdu;
-        NS_LOG_DEBUG ("Starting transmission with power " << WToDbm (txPowerWatts) << " dBm on channel " << +GetChannelNumber ());
-        NS_LOG_DEBUG ("Starting transmission with integrated spectrum power " << WToDbm (Integral (*txPowerSpectrum)) << " dBm; spectrum model Uid: " << txPowerSpectrum->GetSpectrumModel ()->GetUid ());
+//        NS_LOG_DEBUG ("Starting transmission with power " << WToDbm (txPowerWatts) << " dBm on channel " << +GetChannelNumber ());
+//        NS_LOG_DEBUG ("Starting transmission with integrated spectrum power " << WToDbm (Integral (*txPowerSpectrum)) << " dBm; spectrum model Uid: " << txPowerSpectrum->GetSpectrumModel ()->GetUid ());
 
         Ptr<MmWaveSpectrumChannel> c = Create<MmWaveSpectrumChannel>(GetPhyStandard(), GetPhyBand(), GetChannelNumber(),GetFrequency(), GetChannelWidth());
         txParams->SetMmWaveSpectrumChannel(c);
@@ -369,9 +368,9 @@ namespace ns3 {
         uint32_t bandBandwidth = 0;
         switch (GetPhyStandard ())
         {
-            case MMWAVE_PHY_STANDARD_160MHz:
-            case MMWAVE_PHY_STANDARD_80MHz:
-            case MMWAVE_PHY_STANDARD_40MHz:
+            case MMWAVE_PHY_STANDARD_320MHz:
+            case MMWAVE_PHY_STANDARD_640MHz:
+            case MMWAVE_PHY_STANDARD_1280MHz:
                 // Use OFDM subcarrier width of 78.125 KHz as band granularity
                 bandBandwidth = 78125;
                 break;

@@ -101,15 +101,15 @@ namespace ns3 {
     void
     MmWaveSigHeader::SetChannelWidth (uint16_t channelWidth)
     {
-        if (channelWidth == 320)
+        if (channelWidth == 1280)
         {
             m_bandwidth = 3;
         }
-        else if (channelWidth == 160)
+        else if (channelWidth == 640)
         {
             m_bandwidth = 2;
         }
-        else if (channelWidth == 80)
+        else if (channelWidth == 320)
         {
             m_bandwidth = 1;
         }
@@ -124,19 +124,19 @@ namespace ns3 {
     {
         if (m_bandwidth == 3)
         {
-            return 320;
+            return 1280;
         }
         else if (m_bandwidth == 2)
         {
-            return 160;
+            return 640;
         }
         else if (m_bandwidth == 1)
         {
-            return 80;
+            return 320;
         }
         else
         {
-            return 40;
+            return 160;
         }
     }
 

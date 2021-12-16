@@ -228,73 +228,14 @@ namespace ns3 {
         {
             return;
         }
-        else if (m_bulkResponseTimeout.IsRunning ())
+        if (m_bulkResponseTimeout.IsRunning ())
         {
             return;
         }
-        else 
-        {
-            if (!IsStateIdle ())
-            {
-                EndChannelAccess ();
-                StartAccessIfNeed ();
-            }
-            else 
-            {
-                m_txBulkAccessInfo = m_bulkAccessRequests.front ();
-                m_bulkAccessRequests.pop_front ();
-                NS_ASSERT (m_txBulkAccessInfo != 0);
-                NS_ASSERT (IsStateIdle ());
-                m_txBulkAccessInfo->m_startingSeq = m_txop->GetStartingSequenceNumber (GetTypeOfGroup ());
-                if (m_txBulkAccessInfo->m_address.IsGroup ())
-                {
-                    SendDataForPacket ();
-                }
-                else
-                {
-                    SendBulkRequestForPacket ();
-                }
-            }
-        }
-    }
 
-    void
-    CrMmWaveMacLow::SendBulkAccessRequest ()
-    {
-        Ptr<CrMmWaveMac> mac = DynamicCast<CrMmWaveMac> (m_mac);
-        if ((mac->IsAnyConflictBetweenGroup ()) && (GetTypeOfGroup() == INTER_GROUP))
-        {
-            MmWaveChannelNumberStandardPair c;
-            c = mac->GetChannelNeedToAccessForInterGroup ();
-            if (c != GetCurrentChannel ())
-            {
-                if (!IsStateTx ())
-                {
-                    ToSwitchChannel (c);
-                }
-            }
-            else
-            {
-                ToTransmission ();
-            }
-            return;
-        }
-        bool r1 = !m_txop->IsQueueEmpty (GetTypeOfGroup ());
-        bool r2 = m_channelAccessManager->IsRequestAccess ();
-        bool r3 = m_bulkAccess.IsRunning ();
-        if (r1 || r2 || r3)
-        {
-            return;
-        }
-        if (!IsStateIdle ())
-        {
-            return;
-        }
-        NS_ASSERT (IsStateIdle ());
         NS_ASSERT (m_bulkAckTimeout.IsExpired ());
         NS_ASSERT (m_bulkResponseTimeout.IsExpired ());
-        CreateBulkAccessRequests ();
-        StartChannelAccess ();
+
         m_txBulkAccessInfo = m_bulkAccessRequests.front ();
         m_bulkAccessRequests.pop_front ();
         NS_ASSERT (m_txBulkAccessInfo != 0);
@@ -310,10 +251,39 @@ namespace ns3 {
     }
 
     void
+    CrMmWaveMacLow::SendBulkAccessRequest ()
+    {
+        Ptr<CrMmWaveMac> mac = DynamicCast<CrMmWaveMac> (m_mac);
+        if ((mac->IsAnyConflictBetweenGroup ()) && (GetTypeOfGroup() == INTER_GROUP))
+        {
+            MmWaveChannelNumberStandardPair c;
+            c = mac->GetChannelNeedToAccessForInterGroup ();
+            if (c != GetCurrentChannel ())
+            {
+                ToSwitchChannel (c);
+            }
+            else
+            {
+                ToTransmission ();
+            }
+            return;
+        }
+        bool r1 = !m_txop->HasAnyAccessRequest (GetTypeOfGroup ());
+        bool r2 = m_channelAccessManager->IsRequestAccess ();
+        bool r3 = m_bulkAccess.IsRunning ();
+        if (r1 || r2 || r3)
+        {
+            return;
+        }
+        CreateBulkAccessRequests ();
+        StartChannelAccess ();
+        StartNewBulkAccess ();
+    }
+
+    void
     CrMmWaveMacLow::SendDetectionRequest ()
     {
         NS_LOG_FUNCTION (this);
-        NS_ASSERT (IsStateIdle ());
         Ptr<CrMmWaveMac> mac = DynamicCast<CrMmWaveMac> (m_mac);
         StartChannelAccess ();
         Ptr<Packet> packet = Create<Packet> ();
@@ -355,7 +325,6 @@ namespace ns3 {
             m_switchChannel = GetCurrentChannel ();
         }
         NS_LOG_FUNCTION (this << m_switchChannel);
-        NS_ASSERT (IsStateIdle ());
         StartChannelAccess ();
         BeaconHeader beaconHeader;
         beaconHeader.SetChannelNumber (m_switchChannel.first.first);
@@ -379,7 +348,6 @@ namespace ns3 {
         MmWaveChannelNumberStandardPair c;
         c = GetCurrentChannel();
         NS_LOG_FUNCTION (this << c);
-        NS_ASSERT (IsStateIdle ());
         NS_ASSERT (m_bulkAccess.IsExpired ());
         NS_ASSERT (m_txBulkAccessInfo != 0);
         NS_ASSERT (m_txBulkAccessInfo->m_address.IsGroup ());
@@ -402,7 +370,6 @@ namespace ns3 {
         MmWaveChannelNumberStandardPair c;
         c = GetCurrentChannel();
         NS_LOG_FUNCTION (this << c);
-        NS_ASSERT (IsStateIdle ());
         NS_ASSERT (m_txBulkAccessInfo != 0);
         BulkRequestHeader requestHeader;
         requestHeader.SetTxDuration(m_txBulkAccessInfo->m_txDuration);
@@ -428,33 +395,20 @@ namespace ns3 {
         MmWaveChannelNumberStandardPair c;
         c = GetCurrentChannel();
         NS_LOG_FUNCTION (this << c << source << txDuration);
-        
-        if (!IsStateIdle ())
-        {
-            if (m_sendBulkAck.IsRunning ())
-            {
-                m_sendBulkAck.Cancel ();
-            }
-        }
-        else 
-        {
-            NS_ASSERT (IsStateIdle ());
-            BulkResponseHeader responseHeader;
-            responseHeader.SetTxDuration(txDuration);
-            Ptr<Packet> packet = Create<Packet> ();
-            packet->AddHeader (responseHeader);
-            MmWaveMacHeader hdr;
-            hdr.SetType (MMWAVE_MAC_MGT_BULK_RESPONSE);
-            hdr.SetAddr1 (source);
-            hdr.SetAddr2 (m_self);
-            hdr.SetDsNotFrom ();
-            hdr.SetDsNotTo ();
-            hdr.SetNoRetry ();
-            hdr.SetNoMoreFragments ();
-            hdr.SetDuration (txDuration + GetSifs() + GetBulkAckTxDuration (source));
-            StartTransmission (Create<MmWaveMacQueueItem> (packet, hdr, GetCurrentChannel ()));
-        }
-       
+        BulkResponseHeader responseHeader;
+        responseHeader.SetTxDuration(txDuration);
+        Ptr<Packet> packet = Create<Packet> ();
+        packet->AddHeader (responseHeader);
+        MmWaveMacHeader hdr;
+        hdr.SetType (MMWAVE_MAC_MGT_BULK_RESPONSE);
+        hdr.SetAddr1 (source);
+        hdr.SetAddr2 (m_self);
+        hdr.SetDsNotFrom ();
+        hdr.SetDsNotTo ();
+        hdr.SetNoRetry ();
+        hdr.SetNoMoreFragments ();
+        hdr.SetDuration (txDuration + GetSifs() + GetBulkAckTxDuration (source));
+        StartTransmission (Create<MmWaveMacQueueItem> (packet, hdr, GetCurrentChannel ()));
     }
 
     void
@@ -463,29 +417,34 @@ namespace ns3 {
         MmWaveChannelNumberStandardPair c;
         c = GetCurrentChannel();
         NS_LOG_FUNCTION (this << c);
-        if (IsStateIdle ())
+        NS_ASSERT (m_rxBulkAccessInfo != 0);
+        Mac48Address source = m_rxBulkAccessInfo->m_address;
+        uint16_t seqControl = m_rxBulkAccessInfo->m_startingSeq;
+        uint64_t bitmap = m_rxBulkAccessInfo->m_bitmap;
+        m_rxBulkAccessInfo = 0;
+        BulkAckHeader ackHeader;
+        ackHeader.SetStartingSequenceControl (seqControl);
+        ackHeader.SetBitmap (bitmap);
+        Ptr<Packet> packet = Create<Packet> ();
+        packet->AddHeader (ackHeader);
+        MmWaveMacHeader hdr;
+        hdr.SetType (MMWAVE_MAC_MGT_BULK_ACK);
+        hdr.SetAddr1 (source);
+        hdr.SetAddr2 (m_self);
+        hdr.SetDsNotFrom ();
+        hdr.SetDsNotTo ();
+        hdr.SetNoRetry ();
+        hdr.SetNoMoreFragments ();
+        hdr.SetDuration (Seconds (0.0));
+        StartTransmission (Create<MmWaveMacQueueItem> (packet, hdr, GetCurrentChannel ()));
+    }
+
+    void
+    CrMmWaveMacLow::ReadySendAckAfterData ()
+    {
+        if (!IsPhyStateTx ())
         {
-            NS_ASSERT (IsStateIdle ());
-            NS_ASSERT (m_rxBulkAccessInfo != 0);
-            Mac48Address source = m_rxBulkAccessInfo->m_address;
-            uint16_t seqControl = m_rxBulkAccessInfo->m_startingSeq;
-            uint64_t bitmap = m_rxBulkAccessInfo->m_bitmap;
-            m_rxBulkAccessInfo = 0;
-            BulkAckHeader ackHeader;
-            ackHeader.SetStartingSequenceControl (seqControl);
-            ackHeader.SetBitmap (bitmap);
-            Ptr<Packet> packet = Create<Packet> ();
-            packet->AddHeader (ackHeader);
-            MmWaveMacHeader hdr;
-            hdr.SetType (MMWAVE_MAC_MGT_BULK_ACK);
-            hdr.SetAddr1 (source);
-            hdr.SetAddr2 (m_self);
-            hdr.SetDsNotFrom ();
-            hdr.SetDsNotTo ();
-            hdr.SetNoRetry ();
-            hdr.SetNoMoreFragments ();
-            hdr.SetDuration (Seconds (0.0));
-            StartTransmission (Create<MmWaveMacQueueItem> (packet, hdr, GetCurrentChannel ()));
+            SendAckAfterData ();
         }
     }
 
@@ -629,33 +588,21 @@ namespace ns3 {
     }
 
     bool
+    CrMmWaveMacLow::IsOffMode ()
+    {
+        return m_phy->IsStateOff ();
+    }
+
+    bool
     CrMmWaveMacLow::IsBusy ()
     {
         return m_channelAccessManager->IsBusy ();
     }
 
     bool
-    CrMmWaveMacLow::IsStateOff ()
-    {
-        return m_phy->IsStateOff ();
-    }
-
-    bool
-    CrMmWaveMacLow::IsStateTx ()
+    CrMmWaveMacLow::IsPhyStateTx ()
     {
         return m_phy->IsStateTx ();
-    }
-
-    bool
-    CrMmWaveMacLow::IsStateRx ()
-    {
-        return m_phy->IsStateRx ();
-    }
-
-    bool
-    CrMmWaveMacLow::IsStateIdle ()
-    {
-        return m_phy->IsStateIdle ();
     }
 
     uint32_t
@@ -780,7 +727,7 @@ namespace ns3 {
     {
         NS_ASSERT (GetMacLowState() == INTRA_TRANSMISSION || GetMacLowState() == INTER_TRANSMISSION);
         NS_ASSERT (!m_waitIfsEvent.IsRunning ());
-        if (IsStateIdle () && m_bulkAccess.IsRunning ())
+        if (m_bulkAccess.IsRunning ())
         {
             m_txop->NotifyAccessGranted (GetTypeOfGroup());
         }
@@ -791,7 +738,7 @@ namespace ns3 {
     {
         NS_ASSERT (GetMacLowState() == INTRA_TRANSMISSION || GetMacLowState() == INTER_TRANSMISSION);
         NS_ASSERT (!m_waitIfsEvent.IsRunning ());
-        if (IsStateIdle () && m_bulkAccess.IsRunning ())
+        if (m_bulkAccess.IsRunning ())
         {
             m_txop->NotifyAccessGranted (GetTypeOfGroup ());
         }
@@ -875,6 +822,7 @@ namespace ns3 {
     void
     CrMmWaveMacLow::StartChannelAccess ()
     {
+        NS_LOG_DEBUG ("---------------------------------start---------------------------------");
         NS_ASSERT (!m_accessing);
         m_accessing = true;
     }
@@ -882,6 +830,7 @@ namespace ns3 {
     void
     CrMmWaveMacLow::EndChannelAccess ()
     {
+        NS_LOG_DEBUG ("---------------------------------end---------------------------------");
         NS_ASSERT (m_accessing);
         m_accessing = false;
     }
@@ -961,12 +910,8 @@ namespace ns3 {
             case INTRA_GROUP:
                 if (GetMacLowState() == INTRA_TRANSMISSION)
                 {
-                    if ((!m_accessing) && (m_txop->IsQueueEmpty (INTRA_GROUP)))
+                    if ((!m_accessing) && (m_txop->HasAnyAccessRequest (INTRA_GROUP)))
                     {
-                        if (m_txop->HasNextPacket (INTRA_GROUP))
-                        {
-                            m_txop->MissedBulkResponse (INTRA_GROUP);
-                        }
                         if (!m_channelAccessManager->IsRequestAccess ())
                         {
                             m_channelAccessManager->StartRequestAccess (BULK_ACCESS);
@@ -982,12 +927,8 @@ namespace ns3 {
                         c = mac->GetChannelNeedToAccessForInterGroup ();
                         if (c == GetCurrentChannel ())
                         {
-                            if ((!m_accessing) && (m_txop->IsQueueEmpty (INTER_GROUP)))
+                            if ((!m_accessing) && (m_txop->HasAnyAccessRequest (INTER_GROUP)))
                             {
-                                if (m_txop->HasNextPacket (INTER_GROUP))
-                                {
-                                    m_txop->MissedBulkResponse (INTER_GROUP);
-                                }
                                 if (!m_channelAccessManager->IsRequestAccess ())
                                 {
                                     m_channelAccessManager->StartRequestAccess (BULK_ACCESS);
@@ -996,10 +937,7 @@ namespace ns3 {
                         }
                         else
                         {
-                            if (!IsStateTx ())
-                            {
-                                ToSwitchChannel (c);
-                            }
+                            ToSwitchChannel (c);
                         }
                     }
                 }
@@ -1017,14 +955,12 @@ namespace ns3 {
         m_rxBulkAccessInfo->m_numOfReceived++;
         if (source == m_rxBulkAccessInfo->m_address)
         {
-            if (sequence >= m_rxBulkAccessInfo->m_startingSeq)
+            NS_ASSERT (sequence >= m_rxBulkAccessInfo->m_startingSeq);
+            uint16_t pos = sequence - m_rxBulkAccessInfo->m_startingSeq;
+            uint64_t bit = 1;
+            if (pos >= 0)
             {
-                uint16_t pos = sequence - m_rxBulkAccessInfo->m_startingSeq;
-                uint64_t bit = 1;
-                if (pos >= 0)
-                {
-                    m_rxBulkAccessInfo->m_bitmap = m_rxBulkAccessInfo->m_bitmap | (bit << pos);
-                }
+                m_rxBulkAccessInfo->m_bitmap = m_rxBulkAccessInfo->m_bitmap | (bit << pos);
             }
         }
     }
@@ -1041,7 +977,6 @@ namespace ns3 {
             switch (GetTypeOfGroup ())
             {
                 case INTRA_GROUP:
-                    SetMacLowState (INTRA_SUSPEND);
                     ToTransmission ();
                     break;
                 case INTER_GROUP:
@@ -1065,10 +1000,7 @@ namespace ns3 {
                     c = mac->GetChannelNeedToAccessForIntraGroup ();
                     if (c != GetCurrentChannel ())
                     {
-                        if (!IsStateTx ())
-                        {
-                            ToSwitchChannel (c);
-                        }
+                        ToSwitchChannel (c);
                     }
                     else
                     {
@@ -1079,10 +1011,7 @@ namespace ns3 {
                     c = mac->GetChannelNeedToAccessForInterGroup ();
                     if (c != GetCurrentChannel ())
                     {
-                        if (!IsStateTx ())
-                        {
-                            ToSwitchChannel (c);
-                        }
+                        ToSwitchChannel (c);
                     }
                     else
                     {
@@ -1103,23 +1032,25 @@ namespace ns3 {
     CrMmWaveMacLow::ToSwitchChannel (MmWaveChannelNumberStandardPair next)
     {
         Ptr<CrMmWaveMac> mac = DynamicCast<CrMmWaveMac> (m_mac);
-        NS_ASSERT (!IsStateTx ());
         NS_ASSERT (mac->GetAccessMode () == MMWAVE_MULTI_CHANNEL);
         CancelAllEvents ();
 
         switch (GetTypeOfGroup ())
         {
             case INTRA_GROUP:
+                NS_LOG_DEBUG ("-------------------INTRA_GROUP:" << next);
                 SetMacLowState (INTRA_SWITCH);
                 m_phy->SetChannelNumber (next.first.first);
                 m_stateSwitching = Simulator::Schedule (m_phy->GetChannelSwitchDelay (), &CrMmWaveMacLow::ToTransmission, this);
                 break;
             case INTER_GROUP:
+                NS_LOG_DEBUG ("-------------------INTER_GROUP:" << next);
                 SetMacLowState (INTER_SWITCH);
                 m_phy->SetChannelNumber (next.first.first);
                 m_stateSwitching = Simulator::Schedule (m_phy->GetChannelSwitchDelay (), &CrMmWaveMacLow::ToTransmission, this);
                 break;
             case PROBE_GROUP:
+                NS_LOG_DEBUG ("-------------------PROBE_GROUP:" << next);
                 SetMacLowState (PROBE_SWITCH);
                 m_phy->SetChannelNumber (next.first.first);
                 m_stateSwitching = Simulator::Schedule (m_phy->GetChannelSwitchDelay (), &CrMmWaveMacLow::ToDetection, this);
@@ -1150,7 +1081,7 @@ namespace ns3 {
             case INTER_GROUP:
                 NS_ASSERT (mac->GetAccessMode () == MMWAVE_MULTI_CHANNEL);
                 SetMacLowState (INTER_TRANSMISSION);
-                if (m_txop->IsQueueEmpty (INTER_GROUP))
+                if (m_txop->HasAnyAccessRequest (INTER_GROUP))
                 {
                     m_channelAccessManager->StartRequestAccess (BULK_ACCESS);
                 }
@@ -1226,7 +1157,7 @@ namespace ns3 {
 
         Ptr<CrMmWaveMac> mac = DynamicCast<CrMmWaveMac> (m_mac);
         m_beaconEvent = Simulator::Schedule (mac->GetBeaconInterval (), &CrMmWaveMacLow::StartBeacon, this);
-        if (m_txop->IsQueueEmpty (GetTypeOfGroup ()) && IsStateIdle ())
+        if (m_txop->HasAnyAccessRequest (GetTypeOfGroup()))
         {
             NS_ASSERT (m_waitIfsEvent.IsExpired ());
             m_waitIfsEvent = Simulator::Schedule (GetSifs (), &CrMmWaveMacLow::SendBulkAccessRequest, this);
@@ -1250,7 +1181,6 @@ namespace ns3 {
         MmWaveChannelNumberStandardPair c;
         Ptr<CrMmWaveMac> mac = DynamicCast<CrMmWaveMac> (m_mac);
         NS_ASSERT (mac->GetAccessMode () == MMWAVE_MULTI_CHANNEL);
-        NS_ASSERT (!IsStateTx ());
 
         if (m_noActiveUsers)
         {
@@ -1278,10 +1208,7 @@ namespace ns3 {
                 }
                 else
                 {
-                    if (!IsStateTx ())
-                    {
-                        ToSwitchChannel (c);
-                    }
+                    ToSwitchChannel (c);
                 }
                 break;
             case INTER_GROUP:
@@ -1294,11 +1221,14 @@ namespace ns3 {
     void
     CrMmWaveMacLow::StartTransmission (Ptr<MmWaveMacQueueItem> mpdu)
     {
+        NS_ASSERT (m_phy->IsStateOff () != true);
         MmWaveMacState state = GetMacLowState();
         NS_LOG_FUNCTION (this << state);
         NS_ASSERT ((state == INTRA_TRANSMISSION) || (state == INTER_TRANSMISSION));
-        NS_ASSERT (!IsStateOff ());
-        NS_ASSERT (IsStateIdle ());
+        if (IsPhyStateTx ())
+        {
+            return;
+        }
         const MmWaveMacHeader& hdr = mpdu->GetHeader ();
         if (hdr.IsCtl ())
         {
@@ -1310,7 +1240,7 @@ namespace ns3 {
         }
         m_currentPacket = Create<MmWavePsdu> (mpdu->GetPacket (), mpdu->GetHeader ());
         SendPacket ();
-        NS_ASSERT (IsStateTx ());
+        NS_ASSERT (m_phy->IsStateTx () || m_phy->IsStateOff ());
     }
 
     void
@@ -1388,10 +1318,7 @@ namespace ns3 {
             c = mac->GetChannelNeedToAccessForInterGroup ();
             if (c != GetCurrentChannel ())
             {
-                if (!IsStateTx ())
-                {
-                    ToSwitchChannel (c);
-                }
+                ToSwitchChannel (c);
             }
             else
             {
@@ -1409,20 +1336,13 @@ namespace ns3 {
             from = hdr.GetAddr2 ();
         }
 
-        if (from == GetAddress ())
-        {
-            return;
-        }
-
         NS_ASSERT(mac != 0);
-        NS_ASSERT (!IsStateOff ());
+        NS_ASSERT (m_phy->IsStateOff () != true);
         switch (GetTypeOfGroup ())
         {
             case INTRA_GROUP:
             case INTER_GROUP:
-                if (hdr.IsBulkRequest () 
-                    && ((GetMacLowState () == INTRA_TRANSMISSION) 
-                        ||(GetMacLowState () == INTER_TRANSMISSION)))
+                if (hdr.IsBulkRequest ())
                 {
                     if (isPrevNavZero && (to == m_self) && (GetTypeOfGroup () == INTRA_GROUP))
                     {
@@ -1441,20 +1361,19 @@ namespace ns3 {
                         m_rxBulkAccessInfo->m_numOfReceived = 0;
 
                         NS_ASSERT (m_txPacket.IsExpired ());
-                        NS_ASSERT (m_sendBulkAck.IsExpired ());
                         m_txPacket = Simulator::Schedule (GetSifs (), &CrMmWaveMacLow::SendBulkResponseAfterRequest, this, m_rxBulkAccessInfo->m_address, m_rxBulkAccessInfo->m_txDuration);
                         timerDelay = GetSifs ()
                                      + GetBulkResponseTxDuration (from)
                                      + m_rxBulkAccessInfo->m_txDuration
                                      + GetSifs ();
-                        m_sendBulkAck = Simulator::Schedule (timerDelay, &CrMmWaveMacLow::SendAckAfterData, this);
+                        NS_ASSERT (m_sendBulkAck.IsExpired ());
+                        m_sendBulkAck = Simulator::Schedule (timerDelay, &CrMmWaveMacLow::ReadySendAckAfterData, this);
+
                         NS_LOG_DEBUG ("rx bulk request from=" << from << ", txDuration=" << m_rxBulkAccessInfo->m_txDuration << ", send bulk ack timer=" << timerDelay);
                     }
                     NotifyUpdateRotationFactor ();
                 }
-                else if (hdr.IsBulkResponse ()
-                         && ((GetMacLowState () == INTRA_TRANSMISSION) 
-                             ||(GetMacLowState () == INTER_TRANSMISSION)))
+                else if (hdr.IsBulkResponse ())
                 {
                     if (to == m_self && m_bulkResponseTimeout.IsRunning ())
                     {
@@ -1479,9 +1398,7 @@ namespace ns3 {
                         NS_LOG_DEBUG ("rx bulk response from=" << from << ", txDuration=" << m_txBulkAccessInfo->m_txDuration);
                     }
                 }
-                else if (hdr.IsBulkAck ()
-                         && ((GetMacLowState () == INTRA_TRANSMISSION) 
-                             ||(GetMacLowState () == INTER_TRANSMISSION)))
+                else if (hdr.IsBulkAck ())
                 {
                     if (to == m_self && m_bulkAckTimeout.IsRunning ())
                     {
@@ -1531,9 +1448,7 @@ namespace ns3 {
                         m_stationManager->ReportRxOk (from, rxSnr, txVector.GetMode ());
                         m_rxCallback (mpdu);
 
-                        if (m_sendBulkAck.IsRunning ()
-                            && ((GetMacLowState () == INTRA_TRANSMISSION) 
-                                 ||(GetMacLowState () == INTER_TRANSMISSION)))
+                        if (m_sendBulkAck.IsRunning ())
                         {
                             NS_ASSERT (m_rxBulkAccessInfo != 0);
                             if (m_rxBulkAccessInfo->m_address == from)
@@ -1559,12 +1474,13 @@ namespace ns3 {
                     MmWaveChannelNumberStandardPair c;
                     c = m_phy->GetChannelFromChannelNumber (beaconHeader.GetChannelNumber());
                     mac->UpdateNeighborDevice (from, c, Simulator::Now ());
-
+                    NotifyUpdateRotationFactor ();
                 }
                 else if (hdr.IsDetectRequest ())
                 {
                     m_stationManager->ReportRxOk (from, rxSnr, txVector.GetMode ());
                     mac->UpdateNeighborDevice (from, GetCurrentChannel (), Simulator::Now ());
+                    NotifyUpdateRotationFactor ();
                 }
                 else if (hdr.IsData () && m_promisc)
                 {

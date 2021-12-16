@@ -76,10 +76,10 @@ namespace ns3 {
 //        m_fineDetectionDuration = MicroSeconds (800);
 //        m_fastDetectionDuration = MicroSeconds (200);
 
-        m_beaconInterval = MilliSeconds (5);
-        m_detectionInterval = MilliSeconds (10);
-        m_fineDetectionDuration = MilliSeconds (10);
-        m_fastDetectionDuration = MilliSeconds (1);
+        m_beaconInterval = MicroSeconds (1000);
+        m_detectionInterval = MicroSeconds (3800);
+        m_fineDetectionDuration = MicroSeconds (1200);
+        m_fastDetectionDuration = MicroSeconds (200);
     }
 
     CrMmWaveMac::~CrMmWaveMac ()

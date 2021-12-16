@@ -299,10 +299,10 @@ namespace ns3 {
         helper.SetErrorRateModel ("ns3::MmWaveTableBasedErrorRateModel");
         helper.SetPreambleDetectionModel ("ns3::MmWaveThresholdPreambleDetectionModel");
         helper.SetFrameCaptureModel("ns3::MmWaveSimpleFrameCaptureModel");
-        helper.Set ("Antennas", UintegerValue (8));
-        helper.Set ("MaxSupportedTxSpatialStreams", UintegerValue (8));
-        helper.Set ("MaxSupportedRxSpatialStreams", UintegerValue (8));
-        helper.SetStandard (MMWAVE_SUB6GHz_ASSISTED_60GHz_160MHz);
+        helper.Set ("Antennas", UintegerValue (4));
+        helper.Set ("MaxSupportedTxSpatialStreams", UintegerValue (4));
+        helper.Set ("MaxSupportedRxSpatialStreams", UintegerValue (4));
+        helper.SetStandard (MMWAVE_SUB6GHz_ASSISTED_60GHz_1280MHz);
 
         return helper;
     }
@@ -649,8 +649,8 @@ namespace ns3 {
                                     "ControlMode",StringValue ("OfdmRate6MbpsBW10MHz"),
                                     "NonUnicastMode", StringValue ("OfdmRate6MbpsBW10MHz"));
         SetDataRemoteStationManager("ns3::MmWaveConstantRateManager",
-                                    "ControlMode", StringValue("MmWaveMcs3"),
-                                    "DataMode", StringValue("MmWaveMcs3"));
+                                    "ControlMode", StringValue("MmWaveMcs1"),
+                                    "DataMode", StringValue("MmWaveMcs1"));
     }
 
     V2xMmWaveHelper::~V2xMmWaveHelper ()
@@ -772,9 +772,9 @@ namespace ns3 {
 //        LogComponentEnable ("V2xContentionFreeAccess", LOG_PREFIX_TIME);
 //        LogComponentEnable ("V2xContentionFreeAccess", LOG_PREFIX_NODE);
 
-       LogComponentEnable ("V2xMmWaveNetDevice", LOG_LEVEL_ALL);
-       LogComponentEnable ("V2xMmWaveNetDevice", LOG_PREFIX_TIME);
-       LogComponentEnable ("V2xMmWaveNetDevice", LOG_PREFIX_NODE);
+//        LogComponentEnable ("V2xMmWaveNetDevice", LOG_LEVEL_ALL);
+//        LogComponentEnable ("V2xMmWaveNetDevice", LOG_PREFIX_TIME);
+//        LogComponentEnable ("V2xMmWaveNetDevice", LOG_PREFIX_NODE);
     }
 
     NetDeviceContainer
@@ -818,6 +818,10 @@ namespace ns3 {
             node->AddDevice (device);
             devices.Add (device);
 
+//            Ptr<NetDeviceQueueInterface> ndqi = CreateObject<NetDeviceQueueInterface> ();
+//            Ptr<MmWaveMacQueue> macQueue = device->GetMacQueue ();
+//            ndqi->GetTxQueue (0)->ConnectQueueTraces (macQueue);
+//            device->AggregateObject (ndqi);
         }
         return devices;
     }

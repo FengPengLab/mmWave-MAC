@@ -56,7 +56,6 @@ namespace ns3 {
         bool HasNextPacket (TypeOfGroup typeOfGroup);
         bool HasNextFragment (TypeOfGroup typeOfGroup);
         bool HasAnyAccessRequest (TypeOfGroup typeOfGroup);
-        bool IsQueueEmpty (TypeOfGroup typeOfGroup);
         uint16_t GetStartingSequenceNumber (TypeOfGroup typeOfGroup);
         std::vector<MmWaveChannelNumberStandardPair> GetChannelsNeedToAccess (Mac48Address to);
         std::map<Mac48Address, std::vector<std::pair<MmWaveMacHeader, uint32_t>>> GetBulkAccessRequestsInQueue (TypeOfGroup typeOfGroup);

@@ -132,7 +132,7 @@ namespace ns3 {
         }
         else
         {
-            for (uint16_t bw = MMWAVE_MAX_BANDWIDTH; bw >= MMWAVE_MIN_BANDWIDTH; bw = bw / 2)
+            for (uint16_t bw = 1280; bw >= 20; bw = bw / 2)
             {
                 for (uint8_t i = 0; i < (channelWidth / bw); ++i)
                 {
@@ -202,7 +202,62 @@ namespace ns3 {
     JammerPhy::StartRx (Ptr<SpectrumSignalParameters> rxParams)
     {
         NS_LOG_FUNCTION (this << rxParams);
-        return;
+        Time rxDuration = rxParams->duration;
+        Ptr<SpectrumValue> receivedSignalPsd = rxParams->psd;
+        uint32_t senderNodeId = 0;
+        if (rxParams->txPhy)
+        {
+            senderNodeId = rxParams->txPhy->GetDevice ()->GetNode ()->GetId ();
+        }
+        NS_LOG_DEBUG ("Received signal from " << senderNodeId << " with unfiltered power " << WToDbm (Integral (*receivedSignalPsd)) << " dBm");
+
+        uint16_t channelWidth = GetChannelWidth ();
+        double totalRxPowerW = 0;
+        RxPowerWattPerChannelBand rxPowerW;
+
+        for (uint16_t bw = 1280; bw > 20; bw = bw / 2)
+        {
+            for (uint8_t i = 0; i < (channelWidth / bw); i++)
+            {
+                NS_ASSERT (channelWidth >= bw);
+                MmWaveSpectrumBand filteredBand = GetBand (bw, i);
+                Ptr<SpectrumValue> filter = MmWaveSpectrumValueHelper::CreateRfFilter (GetFrequency (), channelWidth, GetBandBandwidth (), GetGuardBandwidth (channelWidth), filteredBand);
+                SpectrumValue filteredSignal = (*filter) * (*receivedSignalPsd);
+                NS_LOG_DEBUG ("Signal power received (watts) before antenna gain for" << bw << " MHz channel band " << +i << ": " << Integral (filteredSignal));
+                double rxPowerPerBandW = Integral (filteredSignal) * DbToRatio (GetRxGain ());
+                rxPowerW.insert ({filteredBand, rxPowerPerBandW});
+                NS_LOG_DEBUG ("Signal power received after antenna gain for" << bw << " MHz channel band " << +i << ": " << rxPowerPerBandW << " W (" << WToDbm (rxPowerPerBandW) << " dBm)");
+            }
+        }
+
+        for (uint8_t i = 0; i < (channelWidth / 20); i++)
+        {
+            MmWaveSpectrumBand filteredBand = GetBand (20, i);
+            Ptr<SpectrumValue> filter = MmWaveSpectrumValueHelper::CreateRfFilter (GetFrequency (), channelWidth, GetBandBandwidth (), GetGuardBandwidth (channelWidth), filteredBand);
+            SpectrumValue filteredSignal = (*filter) * (*receivedSignalPsd);
+            NS_LOG_DEBUG ("Signal power received (watts) before antenna gain for 20 MHz channel band " << +i << ": " << Integral (filteredSignal));
+            double rxPowerPerBandW = Integral (filteredSignal) * DbToRatio (GetRxGain ());
+            totalRxPowerW += rxPowerPerBandW;
+            rxPowerW.insert ({filteredBand, rxPowerPerBandW});
+            NS_LOG_DEBUG ("Signal power received after antenna gain for 20 MHz channel band " << +i << ": " << rxPowerPerBandW << " W (" << WToDbm (rxPowerPerBandW) << " dBm)");
+        }
+
+        NS_LOG_DEBUG ("Total signal power received after antenna gain: " << totalRxPowerW << " W (" << WToDbm (totalRxPowerW) << " dBm)");
+        Ptr<MmWaveSpectrumSignalParameters> mmWaveRxParams = DynamicCast<MmWaveSpectrumSignalParameters> (rxParams);
+
+        // Log the signal arrival to the trace source
+        m_signalCb (mmWaveRxParams ? true : false, senderNodeId, WToDbm (totalRxPowerW), rxDuration);
+
+        // Do no further processing if signal is too weak
+        // Current implementation assumes constant RX power over the PPDU duration
+        if (WToDbm (totalRxPowerW) < GetRxSensitivity ())
+        {
+            NS_LOG_INFO ("Received signal too weak to process: " << WToDbm (totalRxPowerW) << " dBm");
+            return;
+        }
+
+        m_interference.AddForeignSignal (rxDuration, rxPowerW);
+        SwitchMaybeToCcaBusy ();
     }
 
     void
@@ -279,8 +334,8 @@ namespace ns3 {
         switch (GetPhyStandard ())
         {
             case MMWAVE_PHY_STANDARD_320MHz:
-            case MMWAVE_PHY_STANDARD_160MHz:
-            case MMWAVE_PHY_STANDARD_80MHz:
+            case MMWAVE_PHY_STANDARD_640MHz:
+            case MMWAVE_PHY_STANDARD_1280MHz:
                 // Use OFDM subcarrier width of 78.125 KHz as band granularity
                 bandBandwidth = 78125;
                 break;

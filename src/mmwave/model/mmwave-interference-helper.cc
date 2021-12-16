@@ -245,9 +245,8 @@ namespace ns3 {
         double noiseFloor = m_noiseFigure * Nt;
         double noise = noiseFloor + noiseInterference;
         double snr = signal / noise; //linear scale
-        NS_LOG_DEBUG ("bandwidth(MHz)=" << channelWidth << ", signal(W)= " 
-        << signal << ", noise(W)=" << noiseFloor << ", interference(W)=" 
-        << noiseInterference << ", snr=" << RatioToDb (snr) << "dB");
+        double snrDb = RatioToDb (snr);
+        NS_LOG_DEBUG ("bandwidth(MHz)=" << channelWidth << ", signal(W)= " << signal << ", noise(W)=" << noiseFloor << ", interference(W)=" << noiseInterference << ", snr=" << snrDb << "dB");
         double gain = 1;
         if (m_numRxAntennas > nss)
         {

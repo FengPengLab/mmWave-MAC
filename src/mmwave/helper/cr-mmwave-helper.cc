@@ -52,9 +52,9 @@ namespace ns3 {
         helper.SetErrorRateModel ("ns3::MmWaveTableBasedErrorRateModel");
         helper.SetPreambleDetectionModel ("ns3::MmWaveThresholdPreambleDetectionModel");
         helper.SetFrameCaptureModel ("ns3::MmWaveSimpleFrameCaptureModel");
-        helper.Set ("Antennas", UintegerValue (8));
-        helper.Set ("MaxSupportedTxSpatialStreams", UintegerValue (8));
-        helper.Set ("MaxSupportedRxSpatialStreams", UintegerValue (8));
+        helper.Set ("Antennas", UintegerValue (4));
+        helper.Set ("MaxSupportedTxSpatialStreams", UintegerValue (4));
+        helper.Set ("MaxSupportedRxSpatialStreams", UintegerValue (4));
 
         return helper;
     }
@@ -350,15 +350,15 @@ namespace ns3 {
     CrMmWaveHelper::CrMmWaveHelper ()
     {
         SetRemoteStationManager("ns3::MmWaveConstantRateManager",
-                                "ControlMode", StringValue("MmWaveMcs3"),
-                                "DataMode", StringValue("MmWaveMcs3"));
+                                "ControlMode", StringValue("MmWaveMcs1"),
+                                "DataMode", StringValue("MmWaveMcs1"));
         SetSpectrumRepository ("ns3::MmWaveSpectrumRepository",
-                               "MaxRadius", DoubleValue (20),
+                               "MaxRadius", DoubleValue (50),
                                "MaxSize", IntegerValue (1000),
-                               "MaxDelay", TimeValue (Seconds (2)),
+                               "MaxDelay", TimeValue (Seconds (5)),
                                "ThresholdForPUsActivity", DoubleValue (0.1),
                                "ThresholdForSUsActivity", DoubleValue (0.1));
-        m_standard = MMWAVE_COGNITIVE_RADIO_60GHz_40MHz;
+        m_standard = MMWAVE_COGNITIVE_RADIO_60GHz_1C_1280MHz;
     }
 
     CrMmWaveHelper::~CrMmWaveHelper ()
@@ -420,33 +420,29 @@ namespace ns3 {
     void
     CrMmWaveHelper::EnableLogComponents ()
     {
-        // LogComponentEnable ("MultiModelSpectrumChannel", LOG_LEVEL_ALL);
-        // LogComponentEnable ("MultiModelSpectrumChannel", LOG_PREFIX_TIME);
-        // LogComponentEnable ("MultiModelSpectrumChannel", LOG_PREFIX_NODE);
+//        LogComponentEnable ("MmWaveInterferenceHelper", LOG_LEVEL_ALL);
+//        LogComponentEnable ("MmWaveInterferenceHelper", LOG_PREFIX_TIME);
+//        LogComponentEnable ("MmWaveInterferenceHelper", LOG_PREFIX_NODE);
 
-        // LogComponentEnable ("MmWaveSpectrumValueHelper", LOG_LEVEL_ALL);
-        // LogComponentEnable ("MmWaveSpectrumValueHelper", LOG_PREFIX_TIME);
-        // LogComponentEnable ("MmWaveSpectrumValueHelper", LOG_PREFIX_NODE);
+//        LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_ALL);
+//        LogComponentEnable ("MmWaveSpectrumPhy", LOG_PREFIX_TIME);
+//        LogComponentEnable ("MmWaveSpectrumPhy", LOG_PREFIX_NODE);
+//
+//        LogComponentEnable ("MmWavePhy", LOG_LEVEL_ALL);
+//        LogComponentEnable ("MmWavePhy", LOG_PREFIX_TIME);
+//        LogComponentEnable ("MmWavePhy", LOG_PREFIX_NODE);
 
-        // LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_ALL);
-        // LogComponentEnable ("MmWaveSpectrumPhy", LOG_PREFIX_TIME);
-        // LogComponentEnable ("MmWaveSpectrumPhy", LOG_PREFIX_NODE);
+//        LogComponentEnable ("CrMmWaveTxop", LOG_LEVEL_ALL);
+//        LogComponentEnable ("CrMmWaveTxop", LOG_PREFIX_TIME);
+//        LogComponentEnable ("CrMmWaveTxop", LOG_PREFIX_NODE);
 
-        // LogComponentEnable ("MmWavePhy", LOG_LEVEL_ALL);
-        // LogComponentEnable ("MmWavePhy", LOG_PREFIX_TIME);
-        // LogComponentEnable ("MmWavePhy", LOG_PREFIX_NODE);
+        LogComponentEnable ("CrMmWaveMac", LOG_LEVEL_ALL);
+        LogComponentEnable ("CrMmWaveMac", LOG_PREFIX_TIME);
+        LogComponentEnable ("CrMmWaveMac", LOG_PREFIX_NODE);
 
-        // LogComponentEnable ("MmWaveInterferenceHelper", LOG_LEVEL_ALL);
-        // LogComponentEnable ("MmWaveInterferenceHelper", LOG_PREFIX_TIME);
-        // LogComponentEnable ("MmWaveInterferenceHelper", LOG_PREFIX_NODE);
-
-        // LogComponentEnable ("CrMmWaveMac", LOG_LEVEL_ALL);
-        // LogComponentEnable ("CrMmWaveMac", LOG_PREFIX_TIME);
-        // LogComponentEnable ("CrMmWaveMac", LOG_PREFIX_NODE);
-
-        // LogComponentEnable ("CrMmWaveMacLow", LOG_LEVEL_ALL);
-        // LogComponentEnable ("CrMmWaveMacLow", LOG_PREFIX_TIME);
-        // LogComponentEnable ("CrMmWaveMacLow", LOG_PREFIX_NODE);
+        LogComponentEnable ("CrMmWaveMacLow", LOG_LEVEL_ALL);
+        LogComponentEnable ("CrMmWaveMacLow", LOG_PREFIX_TIME);
+        LogComponentEnable ("CrMmWaveMacLow", LOG_PREFIX_NODE);
 
         LogComponentEnable ("CrMmWaveNetDevice", LOG_LEVEL_ALL);
         LogComponentEnable ("CrMmWaveNetDevice", LOG_PREFIX_TIME);

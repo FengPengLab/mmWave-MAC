@@ -5,8 +5,8 @@ namespace ns3 {
 
     MmWaveTxVector::MmWaveTxVector ()
             : m_preamble (MMWAVE_PREAMBLE_DEFAULT),
-              m_channelWidth (80),
-              m_guardInterval (3200),
+              m_channelWidth (1280),
+              m_guardInterval (1600),
               m_nTx (1),
               m_nss (1),
               m_ness (1),

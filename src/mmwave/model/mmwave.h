@@ -9,34 +9,30 @@
 
 
 namespace ns3 {
-
-
     class MmWaveMacHeader;
 
     const uint16_t MMWAVE_SEQNO_SPACE_SIZE = 4096;
     const uint16_t MMWAVE_SEQNO_SPACE_HALF_SIZE = MMWAVE_SEQNO_SPACE_SIZE / 2;
     const uint16_t MMWAVE_MAC_FCS_LENGTH = 4;
-    const uint16_t MMWAVE_MAX_BANDWIDTH = 160;
-    const uint16_t MMWAVE_MIN_BANDWIDTH = 40;
 
     enum MmWavePhyStandard
     {
-        MMWAVE_PHY_STANDARD_UNSPECIFIED,
-        MMWAVE_PHY_STANDARD_40MHz,
-        MMWAVE_PHY_STANDARD_80MHz,
-        MMWAVE_PHY_STANDARD_160MHz
+        MMWAVE_PHY_STANDARD_320MHz,
+        MMWAVE_PHY_STANDARD_640MHz,
+        MMWAVE_PHY_STANDARD_1280MHz,
+        MMWAVE_PHY_STANDARD_UNSPECIFIED
     };
 
     inline std::ostream& operator << (std::ostream& os, MmWavePhyStandard standard)
     {
         switch (standard)
         {
-            case MMWAVE_PHY_STANDARD_40MHz:
-                return (os << "MMWAVE_PHY_STANDARD_40MHz");
-            case MMWAVE_PHY_STANDARD_80MHz:
-                return (os << "MMWAVE_PHY_STANDARD_80MHz");
-            case MMWAVE_PHY_STANDARD_160MHz:
-                return (os << "MMWAVE_PHY_STANDARD_160MHz");
+            case MMWAVE_PHY_STANDARD_320MHz:
+                return (os << "MMWAVE_PHY_STANDARD_320MHz");
+            case MMWAVE_PHY_STANDARD_640MHz:
+                return (os << "MMWAVE_PHY_STANDARD_640MHz");
+            case MMWAVE_PHY_STANDARD_1280MHz:
+                return (os << "MMWAVE_PHY_STANDARD_1280MHz");
             case MMWAVE_PHY_STANDARD_UNSPECIFIED:
             default:
                 return (os << "MMWAVE_PHY_STANDARD_UNSPECIFIED");
@@ -45,10 +41,10 @@ namespace ns3 {
 
     enum MmWaveMacStandard
     {
-        MMWAVE_MAC_STANDARD_UNSPECIFIED,
         MMWAVE_MAC_STANDARD_COGNITIVE_RADIO,
         MMWAVE_MAC_STANDARD_SUB6GHz_ASSISTED,
-        MMWAVE_MAC_STANDARD_JAMMER
+        MMWAVE_MAC_STANDARD_JAMMER,
+        MMWAVE_MAC_STANDARD_UNSPECIFIED
     };
 
     inline std::ostream& operator << (std::ostream& os, MmWaveMacStandard standard)
@@ -69,8 +65,10 @@ namespace ns3 {
 
     enum MmWavePhyBand
     {
-        MMWAVE_PHY_BAND_UNSPECIFIED,
-        MMWAVE_PHY_BAND_60GHZ
+        MMWAVE_PHY_BAND_60GHZ,
+        MMWAVE_PHY_BAND_56GHZ,
+        MMWAVE_PHY_BAND_60GHz_56GHZ,
+        MMWAVE_PHY_BAND_UNSPECIFIED
     };
 
     inline std::ostream& operator << (std::ostream& os, MmWavePhyBand band)
@@ -79,6 +77,10 @@ namespace ns3 {
         {
             case MMWAVE_PHY_BAND_60GHZ:
                 return (os << "MMWAVE_PHY_BAND_60GHZ");
+            case MMWAVE_PHY_BAND_56GHZ:
+                return (os << "MMWAVE_PHY_BAND_56GHZ");
+            case MMWAVE_PHY_BAND_60GHz_56GHZ:
+                return (os << "MMWAVE_PHY_BAND_60GHz_56GHZ");
             case MMWAVE_PHY_BAND_UNSPECIFIED:
             default:
                 return (os << "MMWAVE_PHY_BAND_UNSPECIFIED");
@@ -88,33 +90,39 @@ namespace ns3 {
     enum MmWaveStandard
     {
         MMWAVE_UNSPECIFIED,
-        MMWAVE_COGNITIVE_RADIO_60GHz_160MHz,
-        MMWAVE_COGNITIVE_RADIO_60GHz_80MHz,
-        MMWAVE_COGNITIVE_RADIO_60GHz_40MHz,
-        MMWAVE_JAMMER_60GHz_160MHz,
-        MMWAVE_JAMMER_60GHz_80MHz,
-        MMWAVE_JAMMER_60GHz_40MHz,
-        MMWAVE_SUB6GHz_ASSISTED_60GHz_160MHz,
+        MMWAVE_COGNITIVE_RADIO_60GHz_1C_1280MHz,
+        MMWAVE_COGNITIVE_RADIO_60GHz_2C_640MHz,
+        MMWAVE_COGNITIVE_RADIO_60GHz_4C_320MHz,
+        MMWAVE_COGNITIVE_RADIO_60GHz56GHz_1280MHz,
+        MMWAVE_JAMMER_60GHz_1280MHz,
+        MMWAVE_JAMMER_60GHz_640MHz,
+        MMWAVE_JAMMER_60GHz_320MHz,
+        MMWAVE_JAMMER_56GHz_1280MHz,
+        MMWAVE_SUB6GHz_ASSISTED_60GHz_1280MHz,
     };
 
     inline std::ostream& operator<< (std::ostream& os, MmWaveStandard standard)
     {
         switch (standard)
         {
-            case MMWAVE_COGNITIVE_RADIO_60GHz_160MHz:
-                return (os << "MMWAVE_COGNITIVE_RADIO_60GHz_160MHz");
-            case MMWAVE_COGNITIVE_RADIO_60GHz_80MHz:
-                return (os << "MMWAVE_COGNITIVE_RADIO_60GHz_80MHz");
-            case MMWAVE_COGNITIVE_RADIO_60GHz_40MHz:
-                return (os << "MMWAVE_COGNITIVE_RADIO_60GHz_40MHz");
-            case MMWAVE_JAMMER_60GHz_160MHz:
-                return (os << "MMWAVE_JAMMER_60GHz_160MHz");
-            case MMWAVE_JAMMER_60GHz_80MHz:
-                return (os << "MMWAVE_JAMMER_60GHz_80MHz");
-            case MMWAVE_JAMMER_60GHz_40MHz:
-                return (os << "MMWAVE_JAMMER_60GHz_40MHz");
-            case MMWAVE_SUB6GHz_ASSISTED_60GHz_160MHz:
-                return (os << "MMWAVE_SUB6GHz_ASSISTED_60GHz_160MHz");
+            case MMWAVE_COGNITIVE_RADIO_60GHz_1C_1280MHz:
+                return (os << "MMWAVE_COGNITIVE_RADIO_60GHz_1C_1280MHz");
+            case MMWAVE_COGNITIVE_RADIO_60GHz_2C_640MHz:
+                return (os << "MMWAVE_COGNITIVE_RADIO_60GHz_2C_640MHz");
+            case MMWAVE_COGNITIVE_RADIO_60GHz_4C_320MHz:
+                return (os << "MMWAVE_COGNITIVE_RADIO_60GHz_4C_320MHz");
+            case MMWAVE_COGNITIVE_RADIO_60GHz56GHz_1280MHz:
+                return (os << "MMWAVE_COGNITIVE_RADIO_60GHz56GHz_1280MHz");
+            case MMWAVE_JAMMER_60GHz_1280MHz:
+                return (os << "MMWAVE_JAMMER_60GHz_1280MHz");
+            case MMWAVE_JAMMER_60GHz_640MHz:
+                return (os << "MMWAVE_JAMMER_60GHz_640MHz");
+            case MMWAVE_JAMMER_60GHz_320MHz:
+                return (os << "MMWAVE_JAMMER_60GHz_320MHz");
+            case MMWAVE_JAMMER_56GHz_1280MHz:
+                return (os << "MMWAVE_JAMMER_56GHz_1280MHz");
+            case MMWAVE_SUB6GHz_ASSISTED_60GHz_1280MHz:
+                return (os << "MMWAVE_SUB6GHz_ASSISTED_60GHz_1280MHz");
             case MMWAVE_UNSPECIFIED:
             default:
                 return (os << "MMWAVE_UNSPECIFIED");
@@ -141,26 +149,33 @@ namespace ns3 {
     const std::map<MmWaveStandard, MmWaveStandardInfo> mmWaveStandards =
             {
                     {MMWAVE_UNSPECIFIED, {MMWAVE_PHY_STANDARD_UNSPECIFIED, MMWAVE_PHY_BAND_UNSPECIFIED, MMWAVE_MAC_STANDARD_UNSPECIFIED}},
-                
-                    {MMWAVE_COGNITIVE_RADIO_60GHz_160MHz, {MMWAVE_PHY_STANDARD_160MHz, MMWAVE_PHY_BAND_60GHZ, MMWAVE_MAC_STANDARD_COGNITIVE_RADIO}},
-                    // {MMWAVE_COGNITIVE_RADIO_60GHz_80MHz, {MMWAVE_PHY_STANDARD_80MHz, MMWAVE_PHY_BAND_60GHZ, MMWAVE_MAC_STANDARD_COGNITIVE_RADIO}},
-                    {MMWAVE_COGNITIVE_RADIO_60GHz_40MHz, {MMWAVE_PHY_STANDARD_40MHz, MMWAVE_PHY_BAND_60GHZ, MMWAVE_MAC_STANDARD_COGNITIVE_RADIO}},
-
-                    {MMWAVE_SUB6GHz_ASSISTED_60GHz_160MHz, {MMWAVE_PHY_STANDARD_160MHz, MMWAVE_PHY_BAND_60GHZ, MMWAVE_MAC_STANDARD_SUB6GHz_ASSISTED}},
-                
-                    {MMWAVE_JAMMER_60GHz_160MHz, {MMWAVE_PHY_STANDARD_160MHz, MMWAVE_PHY_BAND_60GHZ, MMWAVE_MAC_STANDARD_JAMMER}},
-                    {MMWAVE_JAMMER_60GHz_80MHz, {MMWAVE_PHY_STANDARD_80MHz, MMWAVE_PHY_BAND_60GHZ, MMWAVE_MAC_STANDARD_JAMMER}},
-                    {MMWAVE_JAMMER_60GHz_40MHz, {MMWAVE_PHY_STANDARD_40MHz, MMWAVE_PHY_BAND_60GHZ, MMWAVE_MAC_STANDARD_JAMMER}}
+                    {MMWAVE_COGNITIVE_RADIO_60GHz_1C_1280MHz, {MMWAVE_PHY_STANDARD_1280MHz, MMWAVE_PHY_BAND_60GHZ, MMWAVE_MAC_STANDARD_COGNITIVE_RADIO}},
+                    {MMWAVE_COGNITIVE_RADIO_60GHz_2C_640MHz, {MMWAVE_PHY_STANDARD_640MHz, MMWAVE_PHY_BAND_60GHZ, MMWAVE_MAC_STANDARD_COGNITIVE_RADIO}},
+                    {MMWAVE_COGNITIVE_RADIO_60GHz_4C_320MHz, {MMWAVE_PHY_STANDARD_320MHz, MMWAVE_PHY_BAND_60GHZ, MMWAVE_MAC_STANDARD_COGNITIVE_RADIO}},
+                    {MMWAVE_COGNITIVE_RADIO_60GHz56GHz_1280MHz, {MMWAVE_PHY_STANDARD_1280MHz, MMWAVE_PHY_BAND_60GHz_56GHZ, MMWAVE_MAC_STANDARD_COGNITIVE_RADIO}},
+                    {MMWAVE_SUB6GHz_ASSISTED_60GHz_1280MHz, {MMWAVE_PHY_STANDARD_1280MHz, MMWAVE_PHY_BAND_60GHZ, MMWAVE_MAC_STANDARD_SUB6GHz_ASSISTED}},
+                    {MMWAVE_JAMMER_60GHz_1280MHz, {MMWAVE_PHY_STANDARD_1280MHz, MMWAVE_PHY_BAND_60GHZ, MMWAVE_MAC_STANDARD_JAMMER}},
+                    {MMWAVE_JAMMER_60GHz_640MHz, {MMWAVE_PHY_STANDARD_640MHz, MMWAVE_PHY_BAND_60GHZ, MMWAVE_MAC_STANDARD_JAMMER}},
+                    {MMWAVE_JAMMER_60GHz_320MHz, {MMWAVE_PHY_STANDARD_320MHz, MMWAVE_PHY_BAND_60GHZ, MMWAVE_MAC_STANDARD_JAMMER}},
+                    {MMWAVE_JAMMER_56GHz_1280MHz, {MMWAVE_PHY_STANDARD_1280MHz, MMWAVE_PHY_BAND_56GHZ, MMWAVE_MAC_STANDARD_JAMMER}}
             };
 
     const MmWaveChannelToFrequencyWidthMap mmWaveChannelToFrequency = {
-            { { {1, MMWAVE_PHY_BAND_60GHZ}, MMWAVE_PHY_STANDARD_160MHz}, {60080, 160} },
-            { { {2, MMWAVE_PHY_BAND_60GHZ}, MMWAVE_PHY_STANDARD_80MHz}, {60040, 80} },
-            { { {3, MMWAVE_PHY_BAND_60GHZ}, MMWAVE_PHY_STANDARD_80MHz}, {60120, 80} },
-            { { {4, MMWAVE_PHY_BAND_60GHZ}, MMWAVE_PHY_STANDARD_40MHz}, {60020, 40} },
-            { { {5, MMWAVE_PHY_BAND_60GHZ}, MMWAVE_PHY_STANDARD_40MHz}, {60060, 40} },
-            { { {6, MMWAVE_PHY_BAND_60GHZ}, MMWAVE_PHY_STANDARD_40MHz}, {60100, 40} },
-            { { {7, MMWAVE_PHY_BAND_60GHZ}, MMWAVE_PHY_STANDARD_40MHz}, {60140, 40} }
+            // 60GHz 1280MHz 1Channel
+            { { {1, MMWAVE_PHY_BAND_60GHZ}, MMWAVE_PHY_STANDARD_1280MHz}, {60000, 1280} },
+            // 56GHz 1280MHz 1Channel
+            { { {2, MMWAVE_PHY_BAND_56GHZ}, MMWAVE_PHY_STANDARD_1280MHz}, {56000, 1280} },
+            // 60GHz 640MHz 2Channel
+            { { {3, MMWAVE_PHY_BAND_60GHZ}, MMWAVE_PHY_STANDARD_640MHz}, {59680, 640} },
+            { { {4, MMWAVE_PHY_BAND_60GHZ}, MMWAVE_PHY_STANDARD_640MHz}, {60320, 640} },
+            // 60GHz 320MHz 4Channel
+            { { {5, MMWAVE_PHY_BAND_60GHZ}, MMWAVE_PHY_STANDARD_320MHz}, {59520, 320} },
+            { { {6, MMWAVE_PHY_BAND_60GHZ}, MMWAVE_PHY_STANDARD_320MHz}, {59840, 320} },
+            { { {7, MMWAVE_PHY_BAND_60GHZ}, MMWAVE_PHY_STANDARD_320MHz}, {60160, 320} },
+            { { {8, MMWAVE_PHY_BAND_60GHZ}, MMWAVE_PHY_STANDARD_320MHz}, {60480, 320} },
+            // 60GHz-56GHz 1280MHz
+            { { {9, MMWAVE_PHY_BAND_60GHz_56GHZ}, MMWAVE_PHY_STANDARD_1280MHz}, {60000, 1280} },
+            { { {10, MMWAVE_PHY_BAND_60GHz_56GHZ}, MMWAVE_PHY_STANDARD_1280MHz}, {56000, 1280} },
     };
 
     enum MmWavePreamble
@@ -247,18 +262,18 @@ namespace ns3 {
 
     enum MmWaveMacState
     {
-        INTRA_SUSPEND = 0,
-        INTRA_SWITCH = 1,
-        INTRA_TRANSMISSION = 2,
-        INTRA_DETECTION = 3,
+        INTRA_SUSPEND,
+        INTRA_SWITCH,
+        INTRA_TRANSMISSION,
+        INTRA_DETECTION,
 
-        INTER_SUSPEND = 4,
-        INTER_SWITCH = 5,
-        INTER_TRANSMISSION = 6,
+        INTER_SUSPEND,
+        INTER_SWITCH,
+        INTER_TRANSMISSION,
 
-        PROBE_SUSPEND = 7,
-        PROBE_SWITCH = 8,
-        PROBE_DETECTION = 9
+        PROBE_SUSPEND,
+        PROBE_SWITCH,
+        PROBE_DETECTION
     };
 
     inline std::ostream& operator<< (std::ostream& os, MmWaveMacState state)

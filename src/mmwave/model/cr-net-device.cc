@@ -443,7 +443,7 @@ namespace ns3 {
     bool
     CrMmWaveNetDevice::Send (Ptr <Packet> packet, const Address &dest, uint16_t protocolNumber)
     {
-        NS_LOG_FUNCTION (this << packet << dest);
+        NS_LOG_FUNCTION (this << packet << dest << protocolNumber);
         NS_ASSERT (Mac48Address::IsMatchingType (dest));
         Mac48Address realTo = Mac48Address::ConvertFrom (dest);
         LlcSnapHeader llc;
@@ -457,7 +457,7 @@ namespace ns3 {
     bool
     CrMmWaveNetDevice::SendFrom (Ptr <Packet> packet, const Address &source, const Address &dest, uint16_t protocolNumber)
     {
-        NS_LOG_FUNCTION (this << packet << source << dest);
+        NS_LOG_FUNCTION (this << packet << source << dest << protocolNumber);
         NS_ASSERT (Mac48Address::IsMatchingType (dest));
         NS_ASSERT (Mac48Address::IsMatchingType (source));
         Mac48Address realTo = Mac48Address::ConvertFrom (dest);

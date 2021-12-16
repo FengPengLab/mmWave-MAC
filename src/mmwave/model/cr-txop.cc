@@ -277,34 +277,6 @@ namespace ns3 {
         return ret;
     }
 
-    bool
-    CrMmWaveTxop::IsQueueEmpty (TypeOfGroup typeOfGroup)
-    {
-        NS_LOG_FUNCTION (this << typeOfGroup);
-        bool ret = false;
-        switch (typeOfGroup)
-        {
-            case INTRA_GROUP:
-                ret = m_queue->FindByChannel (m_lowOfIntraGroup->GetCurrentChannel ());
-                break;
-            case INTER_GROUP:
-                if (m_mac->GetAccessMode () == MMWAVE_MULTI_CHANNEL)
-                {
-                    ret = m_queue->FindByChannel (m_lowOfInterGroup->GetCurrentChannel ());
-                }
-                else
-                {
-                    ret = false;
-                }
-                break;
-            case PROBE_GROUP:
-            default:
-                NS_FATAL_ERROR ("TypeOfGroup is error");
-                return false;
-        }
-        return ret;
-    }
-
     MmWaveChannelNumberStandardPair
     CrMmWaveTxop::GetNeedToAccessForInterGroup ()
     {
@@ -324,7 +296,6 @@ namespace ns3 {
             case INTRA_GROUP:
                 if (m_currentItemOfIntraGroup == 0)
                 {
-                    NS_ASSERT (m_lowOfIntraGroup->IsStateIdle ());
                     NS_ASSERT (!m_bufferOfIntraGroup.empty ());
                     item = m_bufferOfIntraGroup.front ();
                     m_recordsOfIntraGroup.push_back (m_bufferOfIntraGroup.front ());
@@ -350,7 +321,6 @@ namespace ns3 {
                 }
                 else 
                 {
-                    NS_ASSERT (m_lowOfIntraGroup->IsStateIdle ());
                     m_fragmentNumberOfIntraGroup++;
                     fragment = GetFragmentPacket (INTRA_GROUP, &hdr);
                     m_lowOfIntraGroup->StartTransmission (Create<MmWaveMacQueueItem> (fragment, hdr, m_lowOfIntraGroup->GetCurrentChannel ()));
@@ -366,7 +336,6 @@ namespace ns3 {
             case INTER_GROUP:
                 if (m_currentItemOfInterGroup == 0)
                 {
-                    NS_ASSERT (m_lowOfInterGroup->IsStateIdle ());
                     NS_ASSERT (!m_bufferOfInterGroup.empty ());
                     item = m_bufferOfInterGroup.front ();
                     m_recordsOfInterGroup.push_back (m_bufferOfInterGroup.front ());
@@ -392,7 +361,6 @@ namespace ns3 {
                 }
                 else
                 {
-                    NS_ASSERT (m_lowOfInterGroup->IsStateIdle ());
                     m_fragmentNumberOfInterGroup++;
                     fragment = GetFragmentPacket (INTER_GROUP, &hdr);
                     m_lowOfInterGroup->StartTransmission (Create<MmWaveMacQueueItem> (fragment, hdr, m_lowOfInterGroup->GetCurrentChannel ()));

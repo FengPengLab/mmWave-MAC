@@ -94,10 +94,8 @@ namespace ns3 {
         bool IsAnyPUs (MmWaveChannelNumberStandardPair channel);
         bool IsAnySUs (MmWaveChannelNumberStandardPair channel);
         bool IsWithinSizeAndTimeLimits (uint32_t size, MmWaveTxVector txVector, Time limit);
-        bool IsStateOff ();
-        bool IsStateTx ();
-        bool IsStateRx ();
-        bool IsStateIdle ();
+        bool IsOffMode ();
+        bool IsPhyStateTx ();
         TypeOfGroup GetTypeOfGroup () const;
         MmWaveMacState GetMacLowState () const;
         MmWaveChannelNumberStandardPair GetCurrentChannel ();
@@ -113,6 +111,7 @@ namespace ns3 {
         Time GetDetectionDuration () const;
         uint32_t GetRandomInteger (uint32_t min, uint32_t max);
         void CreateBulkAccessRequests ();
+        void ReadySendAckAfterData ();
         EventId m_stateSuspending;
         EventId m_stateSwitching;
         EventId m_stateDetection;
