@@ -1,0 +1,3 @@
+/home/buaa/WorkSpace/ns-allinone-3.33/ns-3.33/src/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/buaa/WorkSpace/ns-allinone-3.33/ns-3.33/src/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/buaa/WorkSpace/ns-allinone-3.33/ns-3.33/src/cmake-build-debug/CMakeFiles/src.dir
