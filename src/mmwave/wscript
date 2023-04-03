@@ -1,0 +1,139 @@
+# -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
+
+# def options(opt):
+#     pass
+
+# def configure(conf):
+#     conf.check_nonfatal(header_name='stdint.h', define_name='HAVE_STDINT_H')
+
+def build(bld):
+    module = bld.create_ns3_module('mmwave', ['core', 'wifi', 'wave', 'network', 'propagation', 'internet', 'spectrum', 'antenna', 'mobility'])
+    module.source = [
+        'helper/cr-mmwave-helper.cc',
+        'helper/mmwave-channel-helper.cc',
+        'helper/v2x-mmwave-helper.cc',
+        'model/cr-dynamic-channel-access-manager.cc',
+        'model/cr-mac-low.cc',
+        'model/cr-mac.cc',
+        'model/cr-net-device.cc',
+        'model/cr-txop.cc',
+        'model/mmwave-constant-rate-manager.cc',
+        'model/mmwave-error-rate-model.cc',
+        'model/mmwave-frame-capture-model.cc',
+        'model/mmwave-interference-helper.cc',
+        'model/mmwave-mac-header.cc',
+        'model/mmwave-mac-low-parameters.cc',
+        'model/mmwave-mac-low.cc',
+        'model/mmwave-mac-queue-item.cc',
+        'model/mmwave-mac-queue.cc',
+        'model/mmwave-mac-rx-middle.cc',
+        'model/mmwave-mac-trailer.cc',
+        'model/mmwave-mac-tx-middle.cc',
+        'model/mmwave-mac.cc',
+        'model/mmwave-mode.cc',
+        'model/mmwave-nist-error-rate-model.cc',
+        'model/mmwave-phy-error-rate-model.cc',
+        'model/mmwave-phy-header.cc',
+        'model/mmwave-phy-state-helper.cc',
+        'model/mmwave-phy-tag.cc',
+        'model/mmwave-phy.cc',
+        'model/mmwave-ppdu.cc',
+        'model/mmwave-preamble-detection-model.cc',
+        'model/mmwave-psdu.cc',
+        'model/mmwave-remote-station-manager.cc',
+        'model/mmwave-simple-frame-capture-model.cc',
+        'model/mmwave-snr-tag.cc',
+        'model/mmwave-spectrum-phy-interface.cc',
+        'model/mmwave-spectrum-phy.cc',
+        'model/mmwave-spectrum-repository.cc',
+        'model/mmwave-spectrum-signal-parameters.cc',
+        'model/mmwave-spectrum-value-helper.cc',
+        'model/mmwave-table-based-error-rate-model.cc',
+        'model/mmwave-threshold-preamble-detection-model.cc',
+        'model/mmwave-tx-vector.cc',
+        'model/mmwave.cc',
+        'model/v2x-channel-scheduler.cc',
+        'model/v2x-contention-free-access.cc',
+        'model/v2x-ctrl-mac-low.cc',
+        'model/v2x-ctrl-mac.cc',
+        'model/v2x-data-mac-low.cc',
+        'model/v2x-data-mac.cc',
+        'model/v2x-default-channel-scheduler.cc',
+        'model/v2x-net-device.cc',
+        'model/v2x-vsa-manager.cc',
+        ]
+
+    module_test = bld.create_ns3_module_test_library('mmwave')
+    module_test.source = [
+        'test/mmwave-test-suite.cc',
+        ]
+    # Tests encapsulating example programs should be listed here
+    if (bld.env['ENABLE_EXAMPLES']):
+        module_test.source.extend([
+        #    'test/mmwave-examples-test-suite.cc',
+             ])
+
+    headers = bld(features='ns3header')
+    headers.module = 'mmwave'
+    headers.source = [
+        'helper/cr-mmwave-helper.h',
+        'helper/mmwave-channel-helper.h',
+        'helper/v2x-mmwave-helper.h',
+        'model/cr-dynamic-channel-access-manager.h',
+        'model/cr-mac-low.h',
+        'model/cr-mac.h',
+        'model/cr-net-device.h',
+        'model/cr-txop.h',
+        'model/mmwave-constant-rate-manager.h',
+        'model/mmwave-error-rate-model.h',
+        'model/mmwave-frame-capture-model.h',
+        'model/mmwave-interference-helper.h',
+        'model/mmwave-mac-header.h',
+        'model/mmwave-mac-low-parameters.h',
+        'model/mmwave-mac-low.h',
+        'model/mmwave-mac-queue-item.h',
+        'model/mmwave-mac-queue.h',
+        'model/mmwave-mac-rx-middle.h',
+        'model/mmwave-mac-trailer.h',
+        'model/mmwave-mac-tx-middle.h',
+        'model/mmwave-mac.h',
+        'model/mmwave-mode.h',
+        'model/mmwave-nist-error-rate-model.h',
+        'model/mmwave-phy-error-rate-model.h',
+        'model/mmwave-phy-header.h',
+        'model/mmwave-phy-listener.h',
+        'model/mmwave-phy-state-helper.h',
+        'model/mmwave-phy-tag.h',
+        'model/mmwave-phy.h',
+        'model/mmwave-ppdu.h',
+        'model/mmwave-preamble-detection-model.h',
+        'model/mmwave-psdu.h',
+        'model/mmwave-remote-station-manager.h',
+        'model/mmwave-simple-frame-capture-model.h',
+        'model/mmwave-snr-tag.h',
+        'model/mmwave-spectrum-phy-interface.h',
+        'model/mmwave-spectrum-phy.h',
+        'model/mmwave-spectrum-repository.h',
+        'model/mmwave-spectrum-signal-parameters.h',
+        'model/mmwave-spectrum-value-helper.h',
+        'model/mmwave-table-based-error-rate-model.h',
+        'model/mmwave-threshold-preamble-detection-model.h',
+        'model/mmwave-tx-vector.h',
+        'model/mmwave.h',
+        'model/v2x-channel-scheduler.h',
+        'model/v2x-contention-free-access.h',
+        'model/v2x-ctrl-mac-low.h',
+        'model/v2x-ctrl-mac.h',
+        'model/v2x-data-mac-low.h',
+        'model/v2x-data-mac.h',
+        'model/v2x-default-channel-scheduler.h',
+        'model/v2x-net-device.h',
+        'model/v2x-vsa-manager.h',
+        ]
+
+    #if bld.env.ENABLE_EXAMPLES:
+        #bld.recurse('examples')
+
+    # bld.ns3_python_bindings()
+
+
